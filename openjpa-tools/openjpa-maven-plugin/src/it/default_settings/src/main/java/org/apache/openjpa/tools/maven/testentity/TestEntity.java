@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.openjpa.tools.maven.testentity;
+package org.apache.openjpa.tools.maven.testentity
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
