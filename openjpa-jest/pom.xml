@@ -85,6 +85,20 @@
                     <execution>
                         <phase>process-test-classes</phase>
                         <configuration>
+                            <!--
+                                Skip mirato dell'enhancement Ant del modulo openjpa-jest.
+
+                                Dopo la rimozione del contenuto delle directory richiesta
+                                dalla consegna, questo task prova ancora a eseguire
+                                l'enhancer usando configurazioni non più presenti,
+                                causando una MetaDataException.
+
+                                Questa modifica non salta i test JUnit/Surefire:
+                                eventuali test scritti successivamente continueranno
+                                a essere compilati ed eseguiti normalmente.
+                            -->
+                            <skip>true</skip>
+
                             <target>
                                 <ant antfile="src/main/ant/enhancer.xml" target="enhance" inheritRefs="true">
                                     <property name="maven.test.skip" value="${maven.test.skip}" />

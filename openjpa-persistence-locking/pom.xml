@@ -39,8 +39,19 @@
         <!-- have to use a larger waitTimeout to avoid lockmgr test failures -->
         <derby.locks.waitTimeout>60</derby.locks.waitTimeout>
         <derby.locks.deadlockTimeout>5</derby.locks.deadlockTimeout>
+
         <!-- set this =** on cmdline to skip all tests -->
         <surefire.excludes.locking />
+
+        <!--
+            Skip mirato dello step Ant di enhancement dei test nativi OpenJPA.
+
+            La consegna richiede di svuotare le directory src/test; di conseguenza
+            il file src/test/ant/enhancer.xml non è più presente. Questa property
+            consente di saltare solo quello step, senza disabilitare l'esecuzione
+            dei test JUnit che verranno sviluppati per l'esercizio.
+        -->
+        <skip.locking.test.enhancer>true</skip.locking.test.enhancer>
     </properties>
 
     <profiles>
@@ -72,8 +83,6 @@
                 </plugins>
             </build>
         </profile>
-
-
     </profiles>
 
     <dependencies>
@@ -141,6 +150,21 @@
                     <execution>
                         <phase>process-test-classes</phase>
                         <configuration>
+                            <!--
+                                Skip mirato dello step Ant nativo di OpenJPA.
+
+                                Questo modulo originariamente usa src/test/ant/enhancer.xml
+                                per effettuare l'enhancement delle classi di test native.
+                                Poiché la consegna richiede di eliminare il contenuto di src/test,
+                                tale file non è più disponibile e l'esecuzione fallirebbe prima
+                                ancora di arrivare ai test.
+
+                                Lo skip riguarda solo questa execution del maven-antrun-plugin:
+                                non equivale a -DskipTests e non impedisce a Surefire di eseguire
+                                i test JUnit che verranno aggiunti per l'esercizio.
+                            -->
+                            <skip>${skip.locking.test.enhancer}</skip>
+
                             <target>
                                 <ant antfile="src/test/ant/enhancer.xml" target="enhance" inheritRefs="true">
                                     <property name="maven.test.skip" value="${maven.test.skip}" />
@@ -158,6 +182,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>

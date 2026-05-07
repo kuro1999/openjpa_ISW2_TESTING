@@ -25,9 +25,9 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-      <groupId>org.apache.openjpa</groupId>
-      <artifactId>openjpa-examples</artifactId>
-      <version>4.1.2-SNAPSHOT</version>
+    <groupId>org.apache.openjpa</groupId>
+    <artifactId>openjpa-examples</artifactId>
+    <version>4.1.2-SNAPSHOT</version>
   </parent>
 
   <groupId>org.apache.openjpa.openjpa-examples</groupId>
@@ -84,31 +84,44 @@
 
     <plugins>
       <plugin>
-          <!-- Use the openjpa maven plugin to enhance the domain model classes -->
-          <groupId>org.apache.openjpa</groupId>
-          <artifactId>openjpa-maven-plugin</artifactId>
-          <configuration>
-            <includes>org/apache/openjpa/examples/gallery/model/*.class</includes>
-            <addDefaultConstructor>true</addDefaultConstructor>
-            <enforcePropertyRestrictions>true</enforcePropertyRestrictions>
-            <persistenceXmlFile>${project.basedir}/src/test/resources/META-INF/persistence.xml</persistenceXmlFile>
-          </configuration>
-          <executions>
-            <execution>
-              <id>enhancer</id>
-              <phase>process-test-classes</phase>
-              <goals>
-                <goal>test-enhance</goal>
-              </goals>
-            </execution>
-          </executions>
-          <dependencies>
-            <dependency>
-              <groupId>org.apache.openjpa</groupId>
-              <artifactId>openjpa-all</artifactId>
-              <version>${project.version}</version>
-            </dependency>
-          </dependencies>
+        <!-- Use the openjpa maven plugin to enhance the domain model classes -->
+        <groupId>org.apache.openjpa</groupId>
+        <artifactId>openjpa-maven-plugin</artifactId>
+        <configuration>
+          <!--
+            Skip mirato dell'enhancer OpenJPA per questo modulo.
+
+            Dopo la rimozione del contenuto delle directory richiesto
+            dalla consegna, il goal test-enhance cerca ancora il file
+            src/test/resources/META-INF/persistence.xml, che non è più
+            presente.
+
+            Questo skip riguarda solo l'enhancement OpenJPA del modulo
+            image-gallery: non disabilita la compilazione né l'esecuzione
+            dei test tramite Maven Surefire.
+          -->
+          <skip>true</skip>
+          <includes>org/apache/openjpa/examples/gallery/model/*.class</includes>
+          <addDefaultConstructor>true</addDefaultConstructor>
+          <enforcePropertyRestrictions>true</enforcePropertyRestrictions>
+          <persistenceXmlFile>${project.basedir}/src/test/resources/META-INF/persistence.xml</persistenceXmlFile>
+        </configuration>
+        <executions>
+          <execution>
+            <id>enhancer</id>
+            <phase>process-test-classes</phase>
+            <goals>
+              <goal>test-enhance</goal>
+            </goals>
+          </execution>
+        </executions>
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.openjpa</groupId>
+            <artifactId>openjpa-all</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>

@@ -35,6 +35,21 @@
     <name>OpenJPA Persistence JDBC</name>
     <description>OpenJPA Persistence JDBC</description>
 
+    <properties>
+        <!--
+            Disabilita l'enhancement statico OpenJPA durante l'esercizio di testing.
+
+            La consegna richiede di eliminare il contenuto delle directory src/test.
+            Senza questa property, lo step Ant "enhance" prova a processare classi e
+            configurazioni di test native OpenJPA che non sono più presenti, causando
+            il fallimento del build.
+
+            Questa modifica non equivale a -DskipTests: i test JUnit aggiunti per
+            l'esercizio continueranno a essere compilati ed eseguiti normalmente.
+        -->
+        <build.enhance>false</build.enhance>
+    </properties>
+
     <profiles>
         <!-- Profile for testing with test-dynamic-enhancer -->
         <profile>

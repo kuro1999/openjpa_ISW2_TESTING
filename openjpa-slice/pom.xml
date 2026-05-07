@@ -20,7 +20,9 @@
 <!--
     Maven release plugin requires the project tag to be on a single line.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -41,22 +43,26 @@
             <artifactId>openjpa-kernel</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.openjpa</groupId>
             <artifactId>openjpa-jdbc</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>jakarta.persistence</groupId>
             <artifactId>jakarta.persistence-api</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.openjpa</groupId>
             <artifactId>openjpa-persistence</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.openjpa</groupId>
             <artifactId>openjpa-persistence-jdbc</artifactId>
@@ -80,6 +86,7 @@
                     <name>test-mysql-slice</name>
                 </property>
             </activation>
+
             <dependencies>
                 <dependency>
                     <groupId>mysql</groupId>
@@ -88,11 +95,13 @@
                     <scope>test</scope>
                 </dependency>
             </dependencies>
+
             <properties>
                 <connection.driver.name>com.mysql.jdbc.Driver</connection.driver.name>
                 <connection.url>${openjpa.mysql.url}</connection.url>
                 <connection.username>${openjpa.mysql.username}</connection.username>
                 <connection.password>${openjpa.mysql.password}</connection.password>
+
                 <!-- DBCP overrides for MySQL testing -->
                 <dbcp.maxIdle>0</dbcp.maxIdle>
                 <dbcp.minIdle>0</dbcp.minIdle>
@@ -109,8 +118,24 @@
                     <execution>
                         <phase>process-test-classes</phase>
                         <configuration>
+                            <!--
+                                Skip mirato dell'enhancement Ant del modulo openjpa-slice.
+
+                                Dopo la rimozione del contenuto delle directory richiesta
+                                dalla consegna, questo task prova comunque a usare file e
+                                configurazioni di test non più presenti, causando una
+                                MetaDataException.
+
+                                Questa modifica non salta i test JUnit/Surefire: eventuali
+                                test scritti successivamente nel modulo continueranno a essere
+                                compilati ed eseguiti normalmente.
+                            -->
+                            <skip>true</skip>
+
                             <target>
-                                <ant antfile="src/main/ant/enhancer.xml" target="enhance" inheritRefs="true">
+                                <ant antfile="src/main/ant/enhancer.xml"
+                                     target="enhance"
+                                     inheritRefs="true">
                                     <property name="maven.test.skip" value="${maven.test.skip}" />
                                     <property name="test" value="${test}" />
                                     <property name="outdir" value="${project.build.outputDirectory}" />
@@ -125,11 +150,13 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <argLine>${test.jvm.arguments}</argLine>
+
                     <excludes>
                         <exclude>**/TestQueryMultiThreaded.java</exclude>
 
@@ -137,8 +164,8 @@
                              are not test cases per OpenJPA standards -->
                         <exclude>org/apache/openjpa/**/*$*.class</exclude>
                         <exclude>org/apache/openjpa/**/*.*.class</exclude>
-
                     </excludes>
+
                     <systemProperties>
                         <property>
                             <name>openjpa.Log</name>

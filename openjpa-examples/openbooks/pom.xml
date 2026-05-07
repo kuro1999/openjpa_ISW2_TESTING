@@ -41,39 +41,49 @@
 
     <properties>
         <checkstyle.suppressions.location>${project.basedir}${file.separator}..${file.separator}..${file.separator}openjpa-project${file.separator}suppressions.xml</checkstyle.suppressions.location>
+
+        <!-- Evita la generazione dell'assembly binario del demo. Non serve per compilare/testare. -->
+        <skip-bin-assembly>true</skip-bin-assembly>
     </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.openjpa</groupId>
             <artifactId>openjpa-all</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.apache.derby</groupId>
             <artifactId>derby</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.antlr</groupId>
             <artifactId>antlr</artifactId>
             <version>3.2</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>de.java2html</groupId>
             <artifactId>java2html</artifactId>
             <version>5.0</version>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <dependency>
             <groupId>com.sun.xml.bind</groupId>
             <artifactId>jaxb-impl</artifactId>
@@ -98,6 +108,7 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
@@ -115,12 +126,14 @@
             <activation>
                 <activeByDefault>true</activeByDefault>
             </activation>
+
             <build>
                 <resources>
                     <resource>
                         <directory>src/main/resources</directory>
                     </resource>
                 </resources>
+
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -130,6 +143,7 @@
                                 <id>genmodel</id>
                                 <phase>process-resources</phase>
                                 <configuration>
+                                    <skip>false</skip>
                                     <target>
                                         <echo>Running OpenBooks genmodel</echo>
                                         <property name="openjpa.version" value="${project.version}" />
@@ -143,10 +157,12 @@
                                     <goal>run</goal>
                                 </goals>
                             </execution>
+
                             <execution>
                                 <id>enhance</id>
                                 <phase>process-classes</phase>
                                 <configuration>
+                                    <skip>false</skip>
                                     <target>
                                         <echo>Running OpenBooks Enhance</echo>
                                         <property name="openjpa.version" value="${project.version}" />
@@ -160,10 +176,12 @@
                                     <goal>run</goal>
                                 </goals>
                             </execution>
+
                             <execution>
                                 <id>generate-source</id>
                                 <phase>prepare-package</phase>
                                 <configuration>
+                                    <skip>true</skip>
                                     <target>
                                         <echo>Running OpenBooks Generate Source</echo>
                                         <property name="openjpa.version" value="${project.version}" />
@@ -184,6 +202,7 @@
                             </execution>
                         </executions>
                     </plugin>
+
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-assembly-plugin</artifactId>
@@ -238,6 +257,5 @@
                 </plugins>
             </build>
         </profile>
-
     </profiles>
 </project>

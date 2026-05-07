@@ -90,6 +90,20 @@
                 <groupId>org.apache.openjpa</groupId>
                 <artifactId>openjpa-maven-plugin</artifactId>
                 <configuration>
+                    <!--
+                        Skip mirato del goal test-enhance di OpenJPA.
+
+                        La consegna richiede di eliminare il contenuto delle directory src/test.
+                        Dopo questa rimozione, il goal test-enhance prova comunque a processare
+                        classi/configurazioni di test native del modulo e fallisce per assenza
+                        della configurazione di persistence.
+
+                        Questa modifica è locale al modulo openjpa-xmlstore e non equivale a
+                        -DskipTests: i test JUnit futuri continueranno a essere compilati ed
+                        eseguiti normalmente dal maven-surefire-plugin.
+                    -->
+                    <skip>true</skip>
+
                     <excludes>org/apache/openjpa/xmlstore/**/Test*.class</excludes>
                     <excludes>org/apache/openjpa/persistence/**/*.class</excludes>
                     <addDefaultConstructor>true</addDefaultConstructor>
@@ -139,4 +153,3 @@
     </build>
 
 </project>
-

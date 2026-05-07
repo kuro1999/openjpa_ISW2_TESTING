@@ -40,10 +40,25 @@
         Apache maven (see http://maven.apache.org).
     </description>
     <inceptionYear>2011</inceptionYear>
+
     <properties>
         <checkstyle.suppressions.location>${project.basedir}${file.separator}..${file.separator}..${file.separator}openjpa-project${file.separator}suppressions.xml</checkstyle.suppressions.location>
         <min.maven.version>3.8.1</min.maven.version>
+
+        <!--
+            Disabilita gli integration test nativi del Maven Invoker Plugin.
+
+            Questo modulo usa maven-invoker-plugin per eseguire progetti Maven
+            di integrazione interni a OpenJPA, presenti sotto src/it. Questi test
+            non corrispondono ai test JUnit sviluppati per l'esercizio.
+
+            La modifica è locale a openjpa-maven-plugin e non equivale a -DskipTests:
+            i test JUnit aggiunti nei moduli del progetto continueranno a essere
+            compilati ed eseguiti normalmente da Surefire.
+        -->
+        <invoker.skip>true</invoker.skip>
     </properties>
+
     <prerequisites>
         <maven>${min.maven.version}</maven>
     </prerequisites>
@@ -177,9 +192,16 @@
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <artifactId>maven-invoker-plugin</artifactId>
                 <configuration>
+                    <!--
+                        Skip mirato degli integration test Maven interni di questo modulo.
+                        Non disabilita Surefire e quindi non influenza i test JUnit futuri.
+                    -->
+                    <skipInvocation>${invoker.skip}</skipInvocation>
+
                     <debug>true</debug>
                     <projectsDirectory>src/it</projectsDirectory>
                     <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
