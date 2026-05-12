@@ -192,6 +192,7 @@
         <module>openjpa-tools</module>
         <module>openjpa-features</module>
         <module>openjpa-junit5</module>
+        <module>openjpa-isw2-tests</module>
     </modules>
 
     <profiles>
@@ -1964,6 +1965,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
+                    <version>${version.maven.surefire}</version>
                     <configuration>
                         <argLine>${surefire.jvm.args}</argLine>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
@@ -1973,6 +1975,10 @@
                             <!-- exclude classes that include a $; inner classes
                                  are not test cases per OpenJPA standards -->
                             <exclude>org/apache/openjpa/**/*$*.class</exclude>
+
+                            <!-- integration tests are executed by Failsafe, not by Surefire -->
+                            <exclude>**/*IT.java</exclude>
+                            <exclude>**/*ITCase.java</exclude>
                         </excludes>
                     <systemProperties>
                         <property>
@@ -2029,6 +2035,86 @@
                         </property>
                     </systemProperties>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${version.maven.surefire}</version>
+                    <configuration>
+                        <argLine>${surefire.jvm.args}</argLine>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
+                        <trimStackTrace>false</trimStackTrace>
+                        <useSystemClassLoader>true</useSystemClassLoader>
+
+                        <includes>
+                            <include>**/*IT.java</include>
+                            <include>**/*ITCase.java</include>
+                        </includes>
+
+                        <systemProperties>
+                            <property>
+                                <name>openjpa.Log</name>
+                                <value>${openjpa.Log}</value>
+                            </property>
+                            <property>
+                                <name>openjpa.DynamicEnhancementAgent</name>
+                                <value>${openjpa.DynamicEnhancementAgent}</value>
+                            </property>
+                            <property>
+                                <name>openjpa.ConnectionDriverName</name>
+                                <value>${connection.driver.name}</value>
+                            </property>
+                            <property>
+                                <name>openjpa.ConnectionURL</name>
+                                <value>${connection.url}</value>
+                            </property>
+                            <property>
+                                <name>openjpa.ConnectionUserName</name>
+                                <value>${connection.username}</value>
+                            </property>
+                            <property>
+                                <name>openjpa.ConnectionPassword</name>
+                                <value>${connection.password}</value>
+                            </property>
+                            <property>
+                                <name>openjpa.jdbc.DBDictionary</name>
+                                <value>${jdbc.DBDictionary}</value>
+                            </property>
+                            <property>
+                                <name>derby.stream.error.file</name>
+                                <value>target/derby.log</value>
+                            </property>
+                            <property>
+                                <name>derby.locks.deadlockTimeout</name>
+                                <value>${derby.locks.deadlockTimeout}</value>
+                            </property>
+                            <property>
+                                <name>derby.locks.waitTimeout</name>
+                                <value>${derby.locks.waitTimeout}</value>
+                            </property>
+                            <property>
+                                <name>openjpa.ConnectionProperties</name>
+                                <value>${dbcp.args}</value>
+                            </property>
+                            <property>
+                                <name>tests.openjpa.allowfailure</name>
+                                <value>${tests.openjpa.allowfailure}</value>
+                            </property>
+                            <property>
+                                <name>openjpa.jdbc.DriverDataSource</name>
+                                <value>${tests.openjpa.driverDataSource}</value>
+                            </property>
+                        </systemProperties>
+                    </configuration>
+
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
                 <plugin>
                     <groupId>io.fabric8</groupId>
