@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.apache.openjpa.jdbc.schema.NameSet;
+import org.apache.openjpa.jdbc.schema.Schema;
 import org.apache.openjpa.jdbc.schema.SchemaGroup;
 import org.apache.openjpa.lib.identifier.IdentifierConfiguration;
 import org.apache.openjpa.lib.identifier.IdentifierRule;
@@ -19,12 +20,21 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.util.Collections;
+
 public class DBIdentifierUtilImplTest {
 
     private static final String VALID_NON_DELIMITED_IDENTIFIER_NAME = "CUSTOMER";
     private static final String VALID_DELIMITED_IDENTIFIER_NAME = "CUSTOMER";
     private static final String EXPECTED_DELIMITED_IDENTIFIER_NAME = "\"CUSTOMER\"";
     private static final String VALID_SCHEMA_NAME = "PUBLIC";
+    private static final String RESERVED_IDENTIFIER_NAME = "SELECT";
+    private static final String EXPECTED_RESERVED_IDENTIFIER_NAME = "SELECT0";
+    private static final String FIRST_UNIQUE_VARIANT_NAME =
+            VALID_NON_DELIMITED_IDENTIFIER_NAME + "1";
+
+    private static final String SECOND_UNIQUE_VARIANT_NAME =
+            VALID_NON_DELIMITED_IDENTIFIER_NAME + "2";
 
     private static final int COMPATIBLE_MAX_LEN = 20;
     private static final int ZERO_MAX_LEN = 0;
@@ -567,4 +577,136 @@ public class DBIdentifierUtilImplTest {
         assertTrue(result.getName().length() <= maxLen);
     }
 
-}
+
+    /*
+    ##########################################################################################
+    FINE PARTE BLACK-BOX INIZIO PARTE WHITE-BOX DOPO AVER VISUALIZZATO I RISULTATI SU JACOCO
+    ##########################################################################################
+    */
+
+
+    @Test
+    public void makeIdentifierValid_withReservedWordIdentifier_returnsIdentifierWithSuffix() {
+        /*
+         * TC9 - Identificatore corrispondente a reserved word
+         *
+         * Frame astratto:
+         *   TF9 = <S5, N2, L3, U1>
+         *
+         * Category partition raffinata:
+         *   S5 = sname valido, non vuoto, non delimitato, ma reserved word
+         *   N2 = set valido, vuoto
+         *   L3 = maxLen valido, positivo
+         *   U1 = checkForUniqueness = true
+         *
+         * Input concreti:
+         *   sname = DBIdentifier.newTable("SELECT")
+         *   set = new SchemaGroup()
+         *   maxLen = COMPATIBLE_MAX_LEN
+         *   checkForUniqueness = true
+         *
+         * Scopo:
+         *   coprire il ramo del metodo in cui il nome candidato viene riconosciuto
+         *   come reserved word.
+         *
+         * Oracolo:
+         *   il metodo deve restituire un DBIdentifier non nullo, non delimitato,
+         *   con nome modificato rispetto alla reserved word originale.
+         *   Nel comportamento atteso, "SELECT" viene trasformato in "SELECT0".
+         */
+        configureReservedWordScenario();
+
+        DBIdentifier sname = DBIdentifier.newTable(RESERVED_IDENTIFIER_NAME);
+        NameSet set = new SchemaGroup();
+        int maxLen = COMPATIBLE_MAX_LEN;
+        boolean checkForUniqueness = true;
+
+        DBIdentifier result = util.makeIdentifierValid(
+                sname,
+                set,
+                maxLen,
+                checkForUniqueness
+        );
+
+        assertNotNull(result);
+        assertEquals(EXPECTED_RESERVED_IDENTIFIER_NAME, result.getName());
+        assertFalse(result.isDelimited());
+
+        verify(config, atLeastOnce()).getIdentifierRule(any());
+    }
+    private void configureReservedWordScenario() {
+        /*
+         * Setup specifico per TC9.
+         *
+         * Nel setUp generale le reserved words sono disattivate:
+         *   rule.getDelimitReservedWords() = false
+         *
+         * Per TC9 vogliamo invece forzare il ramo in cui il nome candidato
+         * viene riconosciuto come reserved word.
+         */
+        when(rule.getDelimitReservedWords()).thenReturn(true);
+        when(rule.getReservedWords()).thenReturn(Collections.singleton(RESERVED_IDENTIFIER_NAME));
+        when(rule.isReservedWord(RESERVED_IDENTIFIER_NAME)).thenReturn(true);
+        when(rule.requiresDelimiters(RESERVED_IDENTIFIER_NAME)).thenReturn(false);
+    }
+
+
+    @Test
+    public void makeIdentifierValid_withExistingIdentifierAndExistingFirstVariant_returnsSecondVariant() {
+        /*
+         * TC10 - Conflitto di unicità con più varianti già presenti
+         *
+         * Frame astratto:
+         *   TF10 = <S3, N3, L3, U1>
+         *
+         * Vincolo relazionale:
+         *   set contains CUSTOMER
+         *   set contains CUSTOMER1
+         *
+         * Category partition:
+         *   S3 = sname valido, non vuoto, non delimitato
+         *   N3 = set valido, non vuoto
+         *   L3 = maxLen valido, positivo
+         *   U1 = checkForUniqueness = true
+         *
+         * Input concreti:
+         *   sname = DBIdentifier.newTable("CUSTOMER")
+         *   set = SchemaGroup contenente già CUSTOMER e CUSTOMER1
+         *   maxLen = COMPATIBLE_MAX_LEN
+         *   checkForUniqueness = true
+         *
+         * Scopo:
+         *   verificare che il metodo prosegua il ciclo di generazione del nome
+         *   quando sia il nome originale sia la prima variante sono già presenti.
+         *
+         * Oracolo:
+         *   il metodo deve restituire un DBIdentifier non nullo, non delimitato,
+         *   con nome CUSTOMER2.
+         */
+        DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
+
+        SchemaGroup schemaGroup = new SchemaGroup();
+        Schema schema = schemaGroup.addSchema(VALID_SCHEMA_NAME);
+
+        schema.addTable(DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME));
+        schema.addTable(DBIdentifier.newTable(FIRST_UNIQUE_VARIANT_NAME));
+
+        NameSet set = schemaGroup;
+
+        int maxLen = COMPATIBLE_MAX_LEN;
+        boolean checkForUniqueness = true;
+
+        DBIdentifier result = util.makeIdentifierValid(
+                sname,
+                set,
+                maxLen,
+                checkForUniqueness
+        );
+
+        assertNotNull(result);
+        assertFalse(result.isDelimited());
+        assertEquals(SECOND_UNIQUE_VARIANT_NAME, result.getName());
+        assertTrue(result.getName().length() <= maxLen);
+
+        verify(config, atLeastOnce()).getIdentifierRule(any());
+    }}
