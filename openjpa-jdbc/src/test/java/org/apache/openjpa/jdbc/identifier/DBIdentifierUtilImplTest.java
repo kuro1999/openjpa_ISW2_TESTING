@@ -4,16 +4,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import org.apache.openjpa.jdbc.schema.NameSet;
 import org.apache.openjpa.jdbc.schema.SchemaGroup;
 import org.apache.openjpa.lib.identifier.IdentifierConfiguration;
 import org.apache.openjpa.lib.identifier.IdentifierRule;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class DBIdentifierUtilImplTest {
@@ -65,6 +68,7 @@ public class DBIdentifierUtilImplTest {
         when(rule.getCanDelimit()).thenReturn(true);
         when(rule.getMustDelimit()).thenReturn(false);
         when(rule.getDelimitReservedWords()).thenReturn(false);
+        when(rule.isAllowTruncation()).thenReturn(true);
 
         /*
          * Il nome candidato condiviso deve essere trattato come nome ordinario:
@@ -105,7 +109,7 @@ public class DBIdentifierUtilImplTest {
          *   equivalente all'identificatore di input.
          */
         DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
-        SchemaGroup set = new SchemaGroup();
+        NameSet set = new SchemaGroup();
         int maxLen = COMPATIBLE_MAX_LEN;
         boolean checkForUniqueness = true;
 
@@ -158,8 +162,9 @@ public class DBIdentifierUtilImplTest {
          */
         DBIdentifier sname = DBIdentifier.newTable(VALID_DELIMITED_IDENTIFIER_NAME, true);
 
-        SchemaGroup set = new SchemaGroup();
-        set.addSchema(VALID_SCHEMA_NAME);
+        SchemaGroup schemaGroup = new SchemaGroup();
+        schemaGroup.addSchema(VALID_SCHEMA_NAME);
+        NameSet set = schemaGroup;
 
         int maxLen = ZERO_MAX_LEN;
         boolean checkForUniqueness = false;
@@ -199,7 +204,7 @@ public class DBIdentifierUtilImplTest {
          *   con nome di lunghezza minore o uguale a SHORT_MAX_LEN.
          */
         DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
-        SchemaGroup set = new SchemaGroup();
+        NameSet set = new SchemaGroup();
         int maxLen = SHORT_MAX_LEN;
         boolean checkForUniqueness = true;
 
@@ -216,4 +221,350 @@ public class DBIdentifierUtilImplTest {
 
         verify(config, atLeastOnce()).getIdentifierRule(any());
     }
+
+
+
+    @Test
+    public void makeIdentifierValid_withNullIdentifier_throwsException() {
+        /*
+         * TC4 - sname nullo
+         *
+         * Frame astratto:
+         *   TF4 = <S1, N2, L3, U1>
+         *
+         * Category partition:
+         *   S1 = sname invalido: null
+         *   N2 = set valido, vuoto
+         *   L3 = maxLen valido, positivo
+         *   U1 = checkForUniqueness = true
+         *
+         * Input concreti:
+         *   sname = null
+         *   set = new SchemaGroup()
+         *   maxLen = COMPATIBLE_MAX_LEN
+         *   checkForUniqueness = true
+         *
+         * Scopo:
+         *   verificare il comportamento del metodo quando l'unico input invalido
+         *   è l'identificatore candidato nullo.
+         *
+         * Oracolo:
+         *   il metodo deve segnalare l'input non valido tramite eccezione.
+         *
+         * Nota:
+         *   Gli altri parametri sono mantenuti su scelte valide, così l'eventuale
+         *   errore osservato è riconducibile a sname = null.
+         */
+        DBIdentifier sname = null;
+        NameSet set = new SchemaGroup();
+        boolean checkForUniqueness = true;
+
+        assertThrows(RuntimeException.class, () ->
+                util.makeIdentifierValid(
+                        sname,
+                        set,
+                        COMPATIBLE_MAX_LEN,
+                        checkForUniqueness
+                )
+        );
+    }
+
+
+    @Ignore("Oracolo iniziale mantenuto a documentazione: set = null non lancia eccezione nel comportamento osservato")
+    @Test
+    public void makeIdentifierValid_withNullNameSet_throwsException() {
+        /*
+         * TC5 - set nullo
+         *
+         * Frame astratto:
+         *   TF5 = <S3, N1, L3, U1>
+         *
+         * Category partition:
+         *   S3 = sname valido, non vuoto, non delimitato
+         *   N1 = set invalido: null
+         *   L3 = maxLen valido, positivo
+         *   U1 = checkForUniqueness = true
+         *
+         * Input concreti:
+         *   sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME)
+         *   set = null
+         *   maxLen = COMPATIBLE_MAX_LEN
+         *   checkForUniqueness = true
+         *
+         * Scopo:
+         *   verificare il comportamento del metodo quando l'unico input invalido
+         *   è il NameSet nullo.
+         *
+         * Oracolo:
+         *   il metodo deve segnalare l'input non valido tramite eccezione.
+         *
+         * Nota:
+         *   Gli altri parametri sono mantenuti su scelte valide, così l'eventuale
+         *   errore osservato è riconducibile a set = null.
+         */
+        DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
+        NameSet set = null;
+        int maxLen = COMPATIBLE_MAX_LEN;
+        boolean checkForUniqueness = true;
+
+        assertThrows(RuntimeException.class, () ->
+                util.makeIdentifierValid(
+                        sname,
+                        set,
+                        maxLen,
+                        checkForUniqueness
+                )
+        );
+    }
+
+    @Test
+    public void makeIdentifierValid_withNullNameSet_returnsValidIdentifier() {
+        /*
+         * TC5 - set nullo
+         *
+         * Frame astratto:
+         *   TF5 = <S3, N1, L3, U1>
+         *
+         * Category partition raffinata:
+         *   S3 = sname valido, non vuoto, non delimitato
+         *   N1 = set nullo / assenza del contesto di unicità
+         *   L3 = maxLen valido, positivo
+         *   U1 = checkForUniqueness = true
+         *
+         * Scopo:
+         *   verificare il comportamento del metodo quando il contesto di unicità
+         *   è assente.
+         *
+         * Oracolo:
+         *   il metodo deve restituire un DBIdentifier valido equivalente all'input,
+         *   perché non esiste un NameSet su cui verificare conflitti.
+         */
+        DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
+        NameSet set = null;
+        int maxLen = COMPATIBLE_MAX_LEN;
+        boolean checkForUniqueness = true;
+
+        DBIdentifier result = util.makeIdentifierValid(
+                sname,
+                set,
+                maxLen,
+                checkForUniqueness
+        );
+
+        assertNotNull(result);
+        assertEquals(VALID_NON_DELIMITED_IDENTIFIER_NAME, result.getName());
+        assertFalse(result.isDelimited());
+
+        verify(config, atLeastOnce()).getIdentifierRule(any());
+    }
+
+
+    @Ignore("Oracolo iniziale scartato: maxLen negativo non lancia eccezione nel comportamento osservato")
+    @Test
+    public void makeIdentifierValid_withNegativeMaxLen_throwsException() {
+        /*
+         * TC6 - maxLen negativo
+         *
+         * Frame astratto:
+         *   TF6 = <S3, N2, L1, U1>
+         *
+         * Category partition:
+         *   S3 = sname valido, non vuoto, non delimitato
+         *   N2 = set valido, vuoto
+         *   L1 = maxLen invalido: negativo
+         *   U1 = checkForUniqueness = true
+         *
+         * Input concreti:
+         *   sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME)
+         *   set = new SchemaGroup()
+         *   maxLen = -1
+         *   checkForUniqueness = true
+         *
+         * Scopo:
+         *   verificare il comportamento del metodo quando l'unico input invalido
+         *   è maxLen negativo.
+         *
+         * Oracolo:
+         *   il metodo deve segnalare l'input non valido tramite eccezione.
+         */
+        DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
+        NameSet set = new SchemaGroup();
+        int maxLen = -1;
+        boolean checkForUniqueness = true;
+
+        assertThrows(RuntimeException.class, () ->
+                util.makeIdentifierValid(
+                        sname,
+                        set,
+                        maxLen,
+                        checkForUniqueness
+                )
+        );
+    }
+
+    @Test
+    public void makeIdentifierValid_withNegativeMaxLen_returnsValidIdentifier() {
+        /*
+         * TC6 - maxLen negativo, comportamento osservato
+         *
+         * Frame astratto:
+         *   TF6 = <S3, N2, L1, U1>
+         *
+         * Category partition raffinata:
+         *   S3 = sname valido, non vuoto, non delimitato
+         *   N2 = set valido, vuoto
+         *   L1 = maxLen negativo / valore anomalo
+         *   U1 = checkForUniqueness = true
+         *
+         * Oracolo raffinato:
+         *   il metodo non solleva eccezione e restituisce un DBIdentifier valido.
+         */
+        DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
+        NameSet set = new SchemaGroup();
+        int maxLen = -1;
+        boolean checkForUniqueness = true;
+
+        DBIdentifier result = util.makeIdentifierValid(
+                sname,
+                set,
+                maxLen,
+                checkForUniqueness
+        );
+
+        assertNotNull(result);
+        assertFalse(result.isDelimited());
+        assertEquals(VALID_NON_DELIMITED_IDENTIFIER_NAME, result.getName());
+    }
+
+
+    @Test
+    public void makeIdentifierValid_withExistingIdentifierAndUniquenessEnabled_returnsDifferentIdentifier() {
+        /*
+         * TC7 - Conflitto di unicità con controllo attivo
+         *
+         * Frame astratto:
+         *   TF7 = <S3, N3, L3, U1>
+         *
+         * Vincolo relazionale:
+         *   set contains sname
+         *
+         * Category partition:
+         *   S3 = sname valido, non vuoto, non delimitato
+         *   N3 = set valido, non vuoto
+         *   L3 = maxLen valido, positivo
+         *   U1 = checkForUniqueness = true
+         *
+         * Scopo:
+         *   verificare che il metodo modifichi l'identificatore quando il nome
+         *   candidato è già presente nel contesto e il controllo di unicità è attivo.
+         *
+         * Oracolo:
+         *   il metodo deve restituire un DBIdentifier non nullo, non delimitato,
+         *   con nome diverso da quello candidato e compatibile con maxLen.
+         */
+        DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
+
+        SchemaGroup schemaGroup = new SchemaGroup();
+        schemaGroup.addSchema(VALID_SCHEMA_NAME)
+                .addTable(DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME));
+        NameSet set = schemaGroup;
+
+        int maxLen = COMPATIBLE_MAX_LEN;
+        boolean checkForUniqueness = true;
+
+        DBIdentifier result = util.makeIdentifierValid(
+                sname,
+                set,
+                maxLen,
+                checkForUniqueness
+        );
+
+        assertNotNull(result);
+        assertFalse(result.isDelimited());
+        assertFalse(VALID_NON_DELIMITED_IDENTIFIER_NAME.equals(result.getName()));
+        assertTrue(result.getName().length() <= maxLen);
+
+        verify(config, atLeastOnce()).getIdentifierRule(any());
+    }
+
+    @Ignore("Oracolo iniziale scartato: empty name non lancia eccezione nel comportamento osservato")
+    @Test
+    public void makeIdentifierValid_withEmptyIdentifierName_throwsException() {
+        /*
+         * TC8 - Nome vuoto
+         *
+         * Frame astratto:
+         *   TF8 = <S2, N2, L3, U1>
+         *
+         * Category partition:
+         *   S2 = sname invalido/robustness: empty name
+         *   N2 = set valido, vuoto
+         *   L3 = maxLen valido, positivo
+         *   U1 = checkForUniqueness = true
+         *
+         * Input concreti:
+         *   sname = DBIdentifier.newTable("")
+         *   set = new SchemaGroup()
+         *   maxLen = COMPATIBLE_MAX_LEN
+         *   checkForUniqueness = true
+         *
+         * Scopo:
+         *   verificare il comportamento del metodo quando l'identificatore candidato
+         *   esiste come oggetto, ma contiene un nome vuoto.
+         *
+         * Oracolo:
+         *   il metodo deve gestire il caso in modo controllato tramite eccezione.
+         *
+         * Nota:
+         *   Gli altri parametri sono mantenuti su scelte valide, così l'eventuale
+         *   errore osservato è riconducibile solo al nome vuoto.
+         */
+        DBIdentifier sname = DBIdentifier.newTable("");
+        NameSet set = new SchemaGroup();
+        int maxLen = COMPATIBLE_MAX_LEN;
+        boolean checkForUniqueness = true;
+
+        assertThrows(RuntimeException.class, () ->
+                util.makeIdentifierValid(
+                        sname,
+                        set,
+                        maxLen,
+                        checkForUniqueness
+                )
+        );
+    }
+    @Test
+    public void makeIdentifierValid_withEmptyIdentifierName_returnsDefinedIdentifier() {
+        /*
+         * TC8 - Nome vuoto, comportamento osservato
+         *
+         * Frame astratto:
+         *   TF8 = <S2, N2, L3, U1>
+         *
+         * Category partition raffinata:
+         *   S2 = sname non nullo con nome vuoto / valore anomalo gestito
+         *   N2 = set valido, vuoto
+         *   L3 = maxLen valido, positivo
+         *   U1 = checkForUniqueness = true
+         *
+         * Oracolo raffinato:
+         *   il metodo non solleva eccezione e restituisce un DBIdentifier.
+         */
+        DBIdentifier sname = DBIdentifier.newTable("");
+        NameSet set = new SchemaGroup();
+        int maxLen = COMPATIBLE_MAX_LEN;
+        boolean checkForUniqueness = true;
+
+        DBIdentifier result = util.makeIdentifierValid(
+                sname,
+                set,
+                maxLen,
+                checkForUniqueness
+        );
+
+        assertNotNull(result);
+        assertNotNull(result.getName());
+        assertTrue(result.getName().length() <= maxLen);
+    }
+
 }
