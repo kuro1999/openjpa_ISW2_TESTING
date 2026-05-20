@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
@@ -16,9 +17,7 @@ import org.apache.openjpa.jdbc.schema.Schema;
 import org.apache.openjpa.jdbc.schema.SchemaGroup;
 import org.apache.openjpa.lib.identifier.IdentifierConfiguration;
 import org.apache.openjpa.lib.identifier.IdentifierRule;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 
 import java.util.Collections;
 
@@ -32,6 +31,8 @@ public class DBIdentifierUtilImplTest {
     private static final String EXPECTED_RESERVED_IDENTIFIER_NAME = "SELECT0";
     private static final String FIRST_UNIQUE_VARIANT_NAME =
             VALID_NON_DELIMITED_IDENTIFIER_NAME + "1";
+    private static final String EMPTY_IDENTIFIER_NAME = "";
+    private static DBIdentifier.DBIdentifierType VALID_IDENTIFIER_TYPE;
 
     private static final String SECOND_UNIQUE_VARIANT_NAME =
             VALID_NON_DELIMITED_IDENTIFIER_NAME + "2";
@@ -44,8 +45,29 @@ public class DBIdentifierUtilImplTest {
     private IdentifierConfiguration config;
     private IdentifierRule rule;
 
+    private static String DEFAULT_DELIMITED_CASE;
+    private static String DEFAULT_SCHEMA_CASE;
+
+    @BeforeClass
+    public static void setUpClass() {
+        /*
+         * Eseguito una sola volta prima di tutti i test.
+         *
+         * Qui inizializziamo solo valori statici condivisi e immutabili.
+         * Non creiamo mock qui, perché i mock devono essere nuovi per ogni test.
+         */
+        VALID_IDENTIFIER_TYPE = DBIdentifier.DBIdentifierType.TABLE;
+        DEFAULT_DELIMITED_CASE = "preserve";
+        DEFAULT_SCHEMA_CASE = "upper";
+    }
+
     @Before
     public void setUp() {
+        /*
+         * Eseguito prima di ogni test.
+         *
+         * Qui creiamo mock e SUT nuovi, così ogni test parte da uno stato pulito.
+         */
         config = mock(IdentifierConfiguration.class);
         rule = mock(IdentifierRule.class);
 
@@ -58,9 +80,6 @@ public class DBIdentifierUtilImplTest {
 
         /*
          * Delimitatori dell'identificatore.
-         *
-         * Servono a IdentifierUtilImpl.isDelimited(...), che controlla se il nome
-         * inizia/finisce con i delimitatori configurati.
          */
         when(config.getLeadingDelimiter()).thenReturn("\"");
         when(config.getTrailingDelimiter()).thenReturn("\"");
@@ -68,7 +87,13 @@ public class DBIdentifierUtilImplTest {
         /*
          * Policy di case per gli identificatori delimitati.
          */
-        when(config.getDelimitedCase()).thenReturn("preserve");
+        when(config.getDelimitedCase()).thenReturn(DEFAULT_DELIMITED_CASE);
+
+        /*
+         * Configurazione utile per fromDBName(...).
+         */
+        when(config.getSupportsDelimitedIdentifiers()).thenReturn(false);
+        when(config.getSchemaCase()).thenReturn(DEFAULT_SCHEMA_CASE);
 
         /*
          * Configurazione del mock IdentifierRule.
@@ -89,6 +114,30 @@ public class DBIdentifierUtilImplTest {
 
         util = new DBIdentifierUtilImpl(config);
     }
+
+
+    @After
+    public void tearDown() {
+        //Eseguito dopo ogni test.
+        util = null;
+        config = null;
+        rule = null;
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        //Eseguito una sola volta dopo tutti i test.
+        VALID_IDENTIFIER_TYPE = null;
+        DEFAULT_DELIMITED_CASE = null;
+        DEFAULT_SCHEMA_CASE = null;
+    }
+
+
+    /*
+     * ============================================================
+     * Tests for makeIdentifierValid
+     * ============================================================
+     */
 
     @Test
     public void makeIdentifierValid_withValidNonDelimitedTableIdentifierAndEmptySchemaGroup_returnsSameIdentifier() {
@@ -579,11 +628,176 @@ public class DBIdentifierUtilImplTest {
 
 
     /*
+     * ============================================================
+     * Tests for fromDBName
+     * ============================================================
+     */
+
+
+    @Test
+    public void fromDBName_withNonEmptyNameAndValidType_returnsIdentifierBasedOnNameAndType() {
+        /*
+         * TC1 - Nome non vuoto e tipo valido
+         *
+         * Frame astratto:
+         *   TF1 = <N1, T1>
+         *
+         * Category partition:
+         *   N1 = valid: non-empty database name
+         *   T1 = valid: DBIdentifierType
+         *
+         * Input concreti:
+         *   name = "CUSTOMER"
+         *   id = DBIdentifier.DBIdentifierType.TABLE
+         *
+         * Scopo:
+         *   verificare il comportamento ordinario del metodo quando riceve
+         *   un nome di database non vuoto e un tipo valido di identificatore.
+         *
+         * Oracolo:
+         *   il metodo deve restituire un DBIdentifier non nullo, del tipo richiesto
+         *   e basato sul nome fornito.
+         */
+        DBIdentifier result = util.fromDBName(
+                VALID_NON_DELIMITED_IDENTIFIER_NAME,
+                VALID_IDENTIFIER_TYPE
+        );
+
+        assertNotNull(result);
+        assertEquals(VALID_IDENTIFIER_TYPE, result.getType());
+        assertNotNull(result.getName());
+        assertEquals(VALID_NON_DELIMITED_IDENTIFIER_NAME, result.getName());
+    }
+
+
+
+
+    @Test
+    public void fromDBName_withEmptyNameAndValidType_returnsIdentifierWithEmptyName() {
+        /*
+         * TC2 - Nome vuoto e tipo valido
+         *
+         * Frame astratto:
+         *   TF2 = <N3, T1>
+         *
+         * Category partition:
+         *   N3 = invalid: empty string
+         *   T1 = valid: DBIdentifierType
+         *
+         * Input concreti:
+         *   name = ""
+         *   id = DBIdentifier.DBIdentifierType.TABLE
+         *
+         * Scopo:
+         *   verificare il comportamento del metodo quando l'unico input invalido
+         *   è il nome vuoto. Il tipo dell'identificatore resta valido.
+         *
+         * Oracolo:
+         *   poiché la documentazione non specifica esplicitamente il comportamento
+         *   per il nome vuoto, il test usa un oracolo osservazionale iniziale:
+         *   se il metodo accetta l'input, deve restituire un DBIdentifier non nullo,
+         *   del tipo richiesto e con nome vuoto.
+         */
+        DBIdentifier result = util.fromDBName(
+                EMPTY_IDENTIFIER_NAME,
+                VALID_IDENTIFIER_TYPE
+        );
+
+        assertNotNull(result);
+        assertEquals(VALID_IDENTIFIER_TYPE, result.getType());
+        assertNotNull(result.getName());
+        assertEquals(EMPTY_IDENTIFIER_NAME, result.getName());
+    }
+
+
+
+
+    @Test
+    public void fromDBName_withNullNameAndValidType_returnsNullIdentifier() {
+        /*
+         * TC3 - Nome nullo e tipo valido
+         *
+         * Frame astratto:
+         *   TF3 = <N2, T1>
+         *
+         * Category partition:
+         *   N2 = invalid: null
+         *   T1 = valid: DBIdentifierType
+         *
+         * Input concreti:
+         *   name = null
+         *   id = DBIdentifier.DBIdentifierType.TABLE
+         *
+         * Scopo:
+         *   verificare il comportamento del metodo quando l'unico input invalido
+         *   è name = null. Il tipo dell'identificatore resta valido.
+         *
+         * Oracolo:
+         *   poiché il nome è assente, il metodo deve restituire un identificatore
+         *   nullo/speciale oppure gestire in modo controllato l'assenza del nome.
+         *   L'oracolo iniziale verifica che il risultato sia un DBIdentifier nullo
+         *   secondo la rappresentazione prevista dalla classe DBIdentifier.
+         */
+        DBIdentifier result = util.fromDBName(
+                null,
+                VALID_IDENTIFIER_TYPE
+        );
+
+        assertNotNull(result);
+        assertTrue(DBIdentifier.isNull(result));
+    }
+
+
+    @Test
+    public void fromDBName_withNonEmptyNameAndNullType_throwsRuntimeException() {
+        /*
+         * TC4 - Nome non vuoto e tipo nullo
+         *
+         * Frame astratto:
+         *   TF4 = <N1, T2>
+         *
+         * Category partition:
+         *   N1 = valid: non-empty database name
+         *   T2 = invalid: null
+         *
+         * Input concreti:
+         *   name = "CUSTOMER"
+         *   id = null
+         *
+         * Scopo:
+         *   verificare il comportamento del metodo quando l'unico input invalido
+         *   è il tipo dell'identificatore. Il nome resta valido e non vuoto.
+         *
+         * Oracolo:
+         *   poiché la documentazione parla di creazione di un identificatore
+         *   "of a given type", l'assenza del tipo viene trattata come input
+         *   invalido. Il metodo deve quindi segnalare il problema tramite
+         *   eccezione runtime.
+         */
+        try {
+            util.fromDBName(
+                    VALID_NON_DELIMITED_IDENTIFIER_NAME,
+                    null
+            );
+            fail("Expected a RuntimeException when DBIdentifierType is null");
+        } catch (RuntimeException expected) {
+            assertNotNull(expected);
+        }
+    }
+
+
+
+        /*
     ##########################################################################################
     FINE PARTE BLACK-BOX INIZIO PARTE WHITE-BOX DOPO AVER VISUALIZZATO I RISULTATI SU JACOCO
     ##########################################################################################
     */
 
+    /*
+     * ============================================================
+     * Tests for makeIdentifierValid
+     * ============================================================
+     */
 
     @Test
     public void makeIdentifierValid_withReservedWordIdentifier_returnsIdentifierWithSuffix() {
@@ -634,6 +848,7 @@ public class DBIdentifierUtilImplTest {
 
         verify(config, atLeastOnce()).getIdentifierRule(any());
     }
+
     private void configureReservedWordScenario() {
         /*
          * Setup specifico per TC9.
@@ -649,7 +864,6 @@ public class DBIdentifierUtilImplTest {
         when(rule.isReservedWord(RESERVED_IDENTIFIER_NAME)).thenReturn(true);
         when(rule.requiresDelimiters(RESERVED_IDENTIFIER_NAME)).thenReturn(false);
     }
-
 
     @Test
     public void makeIdentifierValid_withExistingIdentifierAndExistingFirstVariant_returnsSecondVariant() {
@@ -709,4 +923,119 @@ public class DBIdentifierUtilImplTest {
         assertTrue(result.getName().length() <= maxLen);
 
         verify(config, atLeastOnce()).getIdentifierRule(any());
-    }}
+    }
+
+    /*
+     * ============================================================
+     * Tests for fromDBName
+     * ============================================================
+     */
+
+    @Test
+    public void fromDBName_withSupportedDelimitedIdentifiersAndSameCase_returnsNonDelimitedIdentifier() {
+        /*
+         * WB1 - Supporto delimitatori attivo e stessa policy di case
+         *
+         * Ramo target:
+         *   if (delimCase.equals(nonDelimCase))
+         *
+         * Configurazione:
+         *   supportsDelimitedIdentifiers = true
+         *   delimitedCase = preserve
+         *   schemaCase = preserve
+         *
+         * Scopo:
+         *   coprire il ramo in cui la policy per identificatori delimitati e
+         *   non delimitati coincide. In questo caso il metodo non deve introdurre
+         *   delimitazione aggiuntiva.
+         */
+        when(config.getSupportsDelimitedIdentifiers()).thenReturn(true);
+        when(config.getDelimitedCase()).thenReturn(DEFAULT_DELIMITED_CASE);
+        when(config.getSchemaCase()).thenReturn(DEFAULT_DELIMITED_CASE);
+
+        DBIdentifier result = util.fromDBName(
+                VALID_NON_DELIMITED_IDENTIFIER_NAME,
+                VALID_IDENTIFIER_TYPE
+        );
+
+        assertNotNull(result);
+        assertEquals(VALID_IDENTIFIER_TYPE, result.getType());
+        assertEquals(VALID_NON_DELIMITED_IDENTIFIER_NAME, result.getName());
+        assertFalse(result.isDelimited());
+    }
+
+    @Test
+    public void fromDBName_withPreserveDelimitedCaseAndLowerSchemaCase_returnsDelimitedIdentifier() {
+        /*
+         * WB2 - Delimited case preserve e schema case lower
+         *
+         * Ramo target:
+         *   if (delimCase.equals(CASE_PRESERVE)) {
+         *       if (nonDelimCase.equals(CASE_LOWER)) {
+         *           caseName = name.toLowerCase();
+         *       }
+         *   }
+         *
+         * Configurazione:
+         *   supportsDelimitedIdentifiers = true
+         *   delimitedCase = preserve
+         *   schemaCase = lower
+         *   delimitAll = false
+         *
+         * Scopo:
+         *   coprire il ramo in cui il nome atteso secondo lo schema case sarebbe
+         *   lowercase, ma il nome ricevuto dal database è diverso. Il metodo preserva
+         *   il nome originale marcandolo come delimitato.
+         */
+        when(config.getSupportsDelimitedIdentifiers()).thenReturn(true);
+        when(config.getDelimitedCase()).thenReturn(DEFAULT_DELIMITED_CASE);
+        when(config.getSchemaCase()).thenReturn("lower");
+        when(config.delimitAll()).thenReturn(false);
+
+        DBIdentifier result = util.fromDBName(
+                VALID_NON_DELIMITED_IDENTIFIER_NAME,
+                VALID_IDENTIFIER_TYPE
+        );
+
+        assertNotNull(result);
+        assertEquals(VALID_IDENTIFIER_TYPE, result.getType());
+        assertEquals("\"" + VALID_NON_DELIMITED_IDENTIFIER_NAME + "\"", result.getName());
+        assertTrue(result.isDelimited());
+    }
+
+    @Test
+    public void fromDBName_withDelimitAllTrue_returnsDelimitedIdentifier() {
+        /*
+         * WB3 - Delimitazione forzata da delimitAll()
+         *
+         * Ramo target:
+         *   boolean delimit = !caseName.equals(name)
+         *           || getIdentifierConfiguration().delimitAll();
+         *
+         * Configurazione:
+         *   supportsDelimitedIdentifiers = true
+         *   delimitedCase = lower
+         *   schemaCase = upper
+         *   delimitAll = true
+         *
+         * Scopo:
+         *   coprire il caso in cui la delimitazione non dipende da una differenza
+         *   tra caseName e name, ma viene forzata direttamente dalla configurazione
+         *   delimitAll().
+         */
+        when(config.getSupportsDelimitedIdentifiers()).thenReturn(true);
+        when(config.getDelimitedCase()).thenReturn("lower");
+        when(config.getSchemaCase()).thenReturn("upper");
+        when(config.delimitAll()).thenReturn(true);
+
+        DBIdentifier result = util.fromDBName(
+                VALID_NON_DELIMITED_IDENTIFIER_NAME,
+                VALID_IDENTIFIER_TYPE
+        );
+
+        assertNotNull(result);
+        assertEquals(VALID_IDENTIFIER_TYPE, result.getType());
+        assertTrue(result.isDelimited());
+        assertEquals("\"" + VALID_NON_DELIMITED_IDENTIFIER_NAME + "\"", result.getName());
+    }
+}
