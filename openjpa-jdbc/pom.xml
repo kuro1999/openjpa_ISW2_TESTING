@@ -89,6 +89,12 @@
             <version>5.12.0</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>1.5.1</version>
+            <type>maven-plugin</type>
+        </dependency>
     </dependencies>
 
     <build>
@@ -120,6 +126,19 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.5.1</version>
+                <configuration>
+                    <targetClasses>
+                        <param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl</param>
+                    </targetClasses>
+                    <targetTests>
+                        <param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplTest</param>
+                    </targetTests>
+                </configuration>
             </plugin>
         </plugins>
     </build>
