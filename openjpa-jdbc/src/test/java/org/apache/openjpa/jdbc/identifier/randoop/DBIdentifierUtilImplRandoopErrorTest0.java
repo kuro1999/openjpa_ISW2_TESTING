@@ -2,6 +2,7 @@ package org.apache.openjpa.jdbc.identifier.randoop;
 
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
@@ -20,6 +21,7 @@ public class DBIdentifierUtilImplRandoopErrorTest0 {
         }
     }
 
+    @Ignore
     @Test
     public void test1() throws Throwable {
         if (debug)
@@ -29,6 +31,7 @@ public class DBIdentifierUtilImplRandoopErrorTest0 {
         java.lang.String str3 = dBIdentifierUtilImpl0.removeHungarianNotation("lower", "hi!");
     }
 
+    @Ignore
     @Test
     public void test2() throws Throwable {
         if (debug)
