@@ -136,7 +136,11 @@
                         <param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl</param>
                     </targetClasses>
                     <targetTests>
-                        <param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplTest</param>
+                        <!--<param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplTest</param>-->
+                        <!--<param>org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest</param>-->
+                        <!--<param>org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest0</param>-->
+                        <!--<param>org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest1</param>-->
+                        <param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplGuidedTreeRepairedTest</param>
                     </targetTests>
                 </configuration>
             </plugin>
