@@ -133,14 +133,17 @@
                 <version>1.5.1</version>
                 <configuration>
                     <targetClasses>
-                        <param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl</param>
+                        <!--<param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl</param>-->
+                        <param>org.apache.openjpa.jdbc.meta.MappingRepository</param>
                     </targetClasses>
                     <targetTests>
                         <!--<param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplTest</param>-->
                         <!--<param>org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest</param>-->
                         <!--<param>org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest0</param>-->
                         <!--<param>org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest1</param>-->
-                        <param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplGuidedTreeRepairedTest</param>
+                        <!--<param>org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplGuidedTreeRepairedTest</param>-->
+                        <param>org.apache.openjpa.jdbc.meta.MappingRepositoryTest</param>
+                        <param>org.apache.openjpa.jdbc.meta.MappingRepositoryIT</param>
                     </targetTests>
                 </configuration>
             </plugin>
