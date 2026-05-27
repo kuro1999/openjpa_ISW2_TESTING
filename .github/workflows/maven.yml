@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true  # forza Node.js 24
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout repository
@@ -29,5 +29,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build and run tests
-        run: mvn -pl openjpa-isw2-tests -am verify -Dcheckstyle.skip=true -Drat.skip=true -Dtest=org.apache.openjpa.identifier.DBIdentifierUtilImplTest,org.apache.openjpa.identifier.DBIdentifierUtilImplGuidedTreeRepairedTest,org.apache.openjpa.identifier.randoop.DBIdentifierUtilImplRandoopTest,org.apache.openjpa.identifier.randoop.DBIdentifierUtilImplRandoopTest0,org.apache.openjpa.identifier.randoop.DBIdentifierUtilImplRandoopTest1,org.apache.openjpa.meta.MappingRepositoryTest,org.apache.openjpa.meta.MappingRepositoryIT,org.apache.openjpa.meta.Randoop.MappingRepositoryRandoopTest,org.apache.openjpa.meta.Randoop.MappingRepositoryRandoopTest0
+      - name: Run selected unit and Randoop tests
+        run: >
+          mvn -pl openjpa-jdbc
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
+          -Dtest=org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplTest,org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImplGuidedTreeRepairedTest,org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest,org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest0,org.apache.openjpa.jdbc.identifier.randoop.DBIdentifierUtilImplRandoopTest1,org.apache.openjpa.jdbc.meta.MappingRepositoryTest,org.apache.openjpa.jdbc.meta.Randoop.MappingRepositoryRandoopTest,org.apache.openjpa.jdbc.meta.Randoop.MappingRepositoryRandoopTest0
+          test
+
+      - name: Run selected integration tests
+        run: >
+          mvn -pl openjpa-jdbc
+          -Dcheckstyle.skip=true
+          -Drat.skip=true
+          -Dit.test=org.apache.openjpa.jdbc.meta.MappingRepositoryIT
+          test-compile
+          org.apache.maven.plugins:maven-failsafe-plugin:3.5.2:integration-test
+          org.apache.maven.plugins:maven-failsafe-plugin:3.5.2:verify
