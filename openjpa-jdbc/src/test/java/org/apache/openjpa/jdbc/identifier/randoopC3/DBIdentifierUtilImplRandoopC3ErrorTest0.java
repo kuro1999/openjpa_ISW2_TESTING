@@ -1,12 +1,11 @@
-package org.apache.openjpa.jdbc.identifier.randoop;
+package org.apache.openjpa.jdbc.identifier.randoopC3;
 
 import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.Ignore;
 import org.junit.runners.MethodSorters;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class DBIdentifierUtilImplRandoopErrorTest0 {
+public class DBIdentifierUtilImplRandoopC3ErrorTest0 {
 
     public static boolean debug = false;
 
@@ -21,24 +20,31 @@ public class DBIdentifierUtilImplRandoopErrorTest0 {
         }
     }
 
-    //@Ignore
     @Test
     public void test1() throws Throwable {
         if (debug)
-            System.out.format("%n%s%n", "DBIdentifierUtilImplRandoopErrorTest0.test1");
+            System.out.format("%n%s%n", "DBIdentifierUtilImplRandoopC3ErrorTest0.test1");
         org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl dBIdentifierUtilImpl0 = new org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl();
         // during test generation this statement threw an exception of type java.lang.NullPointerException in error
         java.lang.String str3 = dBIdentifierUtilImpl0.removeHungarianNotation("lower", "hi!");
     }
 
-    //@Ignore
     @Test
     public void test2() throws Throwable {
         if (debug)
-            System.out.format("%n%s%n", "DBIdentifierUtilImplRandoopErrorTest0.test2");
+            System.out.format("%n%s%n", "DBIdentifierUtilImplRandoopC3ErrorTest0.test2");
         org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl dBIdentifierUtilImpl0 = new org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl();
         // during test generation this statement threw an exception of type java.lang.NullPointerException in error
         boolean boolean3 = dBIdentifierUtilImpl0.canSplit(".", ".");
+    }
+
+    @Test
+    public void test3() throws Throwable {
+        if (debug)
+            System.out.format("%n%s%n", "DBIdentifierUtilImplRandoopC3ErrorTest0.test3");
+        org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl dBIdentifierUtilImpl0 = new org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl();
+        // during test generation this statement threw an exception of type java.lang.NullPointerException in error
+        java.lang.String str3 = dBIdentifierUtilImpl0.delimit("", "");
     }
 }
 

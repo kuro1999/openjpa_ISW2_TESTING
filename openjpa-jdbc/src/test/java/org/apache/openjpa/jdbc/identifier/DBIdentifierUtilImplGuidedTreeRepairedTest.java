@@ -243,7 +243,7 @@ public class DBIdentifierUtilImplGuidedTreeRepairedTest {
 
      delimit(DBIdentifier, boolean) should return a non-null string for a simple identifier.
      */
-    @Ignore("ignore per PIT e JACOCO")
+    //@Ignore("ignore per PIT e JACOCO")
     @Test
     public void testDelimitSimple() {
         DBIdentifier id = DBIdentifier.newIdentifier("SIMPLE", DBIdentifier.DBIdentifierType.COLUMN);
@@ -252,36 +252,6 @@ public class DBIdentifierUtilImplGuidedTreeRepairedTest {
         assertTrue("delimit result should contain identifier characters", out.length() > 0);
     }
 
-    /**
-
-     Expected behavior:
-
-     makeNameValid should return a DBIdentifier and not throw when provided with a NameSet mock.
-
-     Use DBIdentifierUtil.TABLE constant from the DBIdentifierUtil interface.
-     */
-    @Ignore("ignore per PIT e JACOCO")
-    @Test
-    public void testMakeNameValidBasic() {
-        NameSet set = mock(NameSet.class);
-        when(set.isNameTaken(any(DBIdentifier.class))).thenReturn(false);
-
-        DBIdentifier out = util.makeNameValid("SOME_NAME", set, 30, DBIdentifierUtil.TABLE, true);
-        assertNotNull("makeNameValid should return a DBIdentifier", out);
-    }
-
-    /**
-
-     Expected behavior:
-
-     makeIdentifierValid should accept DBIdentifier.NULL and not throw; it should return a DBIdentifier (possibly NULL).
-     */
-    @Ignore("ignore per PIT e JACOCO")
-    @Test
-    public void testMakeIdentifierValidWithNull() {
-        DBIdentifier out = util.makeIdentifierValid(DBIdentifier.NULL, (NameSet) null, 10, false);
-        assertNotNull("makeIdentifierValid should not return null even for DBIdentifier.NULL", out);
-    }
 
     /**
 
@@ -305,7 +275,7 @@ public class DBIdentifierUtilImplGuidedTreeRepairedTest {
 
      append should concatenate provided DBIdentifier names into a new DBIdentifier of the requested type.
      */
-    @Ignore("ignore per PIT e JACOCO")
+    //@Ignore("ignore per PIT e JACOCO")
     @Test
     public void testAppendMultipleNames() {
         DBIdentifier a = DBIdentifier.newIdentifier("A", DBIdentifier.DBIdentifierType.COLUMN);
@@ -349,7 +319,7 @@ public class DBIdentifierUtilImplGuidedTreeRepairedTest {
 
      Methods should gracefully handle DBIdentifier.NULL and null NameSet/Table/Schema without throwing unexpected exceptions.
      */
-    @Ignore("ignore per PIT e JACOCO")
+    //@Ignore("ignore per PIT e JACOCO")
     @Test
     public void testMultipleMethodsHandleNullsGracefully() {
         try {

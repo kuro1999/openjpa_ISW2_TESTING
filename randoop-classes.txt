@@ -1,1 +1,1 @@
-org.apache.openjpa.jdbc.meta.MappingRepository
+org.apache.openjpa.jdbc.identifier.DBIdentifierUtilImpl
