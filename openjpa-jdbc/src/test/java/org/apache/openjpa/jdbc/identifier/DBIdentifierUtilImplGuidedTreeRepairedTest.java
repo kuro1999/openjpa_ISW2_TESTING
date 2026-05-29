@@ -286,6 +286,7 @@ public class DBIdentifierUtilImplGuidedTreeRepairedTest {
         assertTrue("Combined name should contain parts of the inputs", combined.getName().contains("A") || combined.getName().contains("B"));
     }
 
+
     /**
 
      Expected behavior:
