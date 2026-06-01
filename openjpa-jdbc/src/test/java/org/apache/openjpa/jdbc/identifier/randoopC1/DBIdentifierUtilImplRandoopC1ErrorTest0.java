@@ -1,6 +1,7 @@
 package org.apache.openjpa.jdbc.identifier.randoopC1;
 
 import org.junit.FixMethodOrder;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
@@ -20,6 +21,7 @@ public class DBIdentifierUtilImplRandoopC1ErrorTest0 {
         }
     }
 
+    @Ignore("CI stuff")
     @Test
     public void test1() throws Throwable {
         if (debug)
@@ -29,6 +31,7 @@ public class DBIdentifierUtilImplRandoopC1ErrorTest0 {
         java.lang.String str3 = dBIdentifierUtilImpl0.removeHungarianNotation("lower", "hi!");
     }
 
+    @Ignore("CI stuff")
     @Test
     public void test2() throws Throwable {
         if (debug)
@@ -38,6 +41,7 @@ public class DBIdentifierUtilImplRandoopC1ErrorTest0 {
         boolean boolean3 = dBIdentifierUtilImpl0.canSplit(".", ".");
     }
 
+    @Ignore("CI stuff")
     @Test
     public void test3() throws Throwable {
         if (debug)

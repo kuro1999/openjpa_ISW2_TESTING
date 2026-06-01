@@ -21,7 +21,7 @@ public class MappingRepositoryRandoopErrorTest0 {
         }
     }
 
-    @Ignore
+    @Ignore("CI stuff")
     @Test
     public void test1() throws Throwable {
         if (debug)
@@ -34,7 +34,7 @@ public class MappingRepositoryRandoopErrorTest0 {
         mappingRepository0.endConfiguration();
     }
 
-    @Ignore
+    @Ignore("CI stuff")
     @Test
     public void test2() throws Throwable {
         if (debug)
@@ -47,7 +47,7 @@ public class MappingRepositoryRandoopErrorTest0 {
         boolean boolean5 = mappingRepository0.isNonDefaultMappingAllowed();
     }
 
-    @Ignore
+    @Ignore("CI stuff")
     @Test
     public void test3() throws Throwable {
         if (debug)
@@ -64,7 +64,7 @@ public class MappingRepositoryRandoopErrorTest0 {
         mappingRepository0.endConfiguration();
     }
 
-    @Ignore
+    @Ignore("CI stuff")
     @Test
     public void test4() throws Throwable {
         if (debug)
