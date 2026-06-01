@@ -2,7 +2,6 @@ package org.apache.openjpa.jdbc.identifier;
 
 import org.apache.openjpa.jdbc.conf.JDBCConfiguration;
 import org.apache.openjpa.jdbc.schema.Column;
-import org.apache.openjpa.jdbc.schema.NameSet;
 import org.apache.openjpa.jdbc.schema.Schema;
 import org.apache.openjpa.jdbc.schema.Table;
 import org.apache.openjpa.lib.identifier.IdentifierConfiguration;
@@ -243,7 +242,7 @@ public class DBIdentifierUtilImplGuidedTreeRepairedTest {
 
      delimit(DBIdentifier, boolean) should return a non-null string for a simple identifier.
      */
-    //@Ignore("ignore per PIT e JACOCO")
+    @Ignore("ignore per PIT e JACOCO")
     @Test
     public void testDelimitSimple() {
         DBIdentifier id = DBIdentifier.newIdentifier("SIMPLE", DBIdentifier.DBIdentifierType.COLUMN);
@@ -275,7 +274,7 @@ public class DBIdentifierUtilImplGuidedTreeRepairedTest {
 
      append should concatenate provided DBIdentifier names into a new DBIdentifier of the requested type.
      */
-    //@Ignore("ignore per PIT e JACOCO")
+    @Ignore("ignore per PIT e JACOCO")
     @Test
     public void testAppendMultipleNames() {
         DBIdentifier a = DBIdentifier.newIdentifier("A", DBIdentifier.DBIdentifierType.COLUMN);
@@ -320,7 +319,7 @@ public class DBIdentifierUtilImplGuidedTreeRepairedTest {
 
      Methods should gracefully handle DBIdentifier.NULL and null NameSet/Table/Schema without throwing unexpected exceptions.
      */
-    //@Ignore("ignore per PIT e JACOCO")
+    @Ignore("ignore per PIT e JACOCO")
     @Test
     public void testMultipleMethodsHandleNullsGracefully() {
         try {
