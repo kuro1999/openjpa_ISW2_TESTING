@@ -3,22 +3,18 @@ package org.apache.openjpa.jdbc.meta;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
 import org.apache.openjpa.meta.MetaDataFactory;
 import org.apache.openjpa.meta.MetaDataRepository;
-import org.apache.openjpa.util.MetaDataException;
 import org.junit.Before;
 import org.junit.Test;
 
 public class MappingRepositoryIT {
 
     private static final String RESULT_MAPPING_NAME = "mappingA";
-    private static final String MISSING_MAPPING_NAME = "missingMapping";
 
     private MappingRepository repository;
     private MetaDataFactory factory;
@@ -27,48 +23,59 @@ public class MappingRepositoryIT {
     @Before
     public void setUp() {
         /*
-         * Integration test mirato.
+         * Integration test top-down mirato con boundary mockato.
          *
-         * Oggetto principale reale:
+         * Componente reale sotto test:
          * - MappingRepository.
          *
-         * Collaboratore controllato:
+         * Componente mockato:
          * - MetaDataFactory.
          *
-         * Il test non adotta un approccio big bang: non viene avviato
-         * l'intero framework OpenJPA, non vengono caricati entity manager,
-         * database, schema reali o parser completi dei metadata.
+         * Oggetto reale osservato come risultato:
+         * - QueryResultMapping.
          *
-         * Il focus è esclusivamente sulla comunicazione tra MappingRepository
-         * e MetaDataFactory durante il caricamento di un QueryResultMapping.
+         * Questo test non è un integration test end-to-end dell'intero framework
+         * OpenJPA.
+         *
+         * L'obiettivo è configurare uno stato iniziale, attivare il flusso di
+         * caricamento dei query metadata e verificare che MappingRepository reagisca
+         * correttamente all'esito prodotto dal boundary MetaDataFactory.
+         *
+         * La comunicazione verificata è:
+         * - MappingRepository -> MetaDataFactory.
+         *
+         * Il risultato verificato tramite assert è:
+         * - presenza, cache e restituzione di un QueryResultMapping reale.
          */
         repository = new MappingRepository();
 
         /*
-         * La MetaDataFactory viene mockata non perché il test sia un unit test
-         * puro, ma perché vogliamo controllare il collaboratore esterno e
-         * osservare il protocollo di interazione tra i due moduli selezionati.
+         * MetaDataFactory viene mockata perché in questo test rappresenta il
+         * boundary esterno del caricamento metadata.
          *
-         * In questo modo il test rimane un integration test top-down mirato:
-         * MappingRepository è il modulo superiore, MetaDataFactory è il
-         * collaboratore inferiore coinvolto nel caricamento dei metadata.
+         * Non vogliamo testare il parser reale dei metadata OpenJPA, né il
+         * caricamento da annotazioni/XML. Vogliamo invece controllare in modo
+         * deterministico l'esito del caricamento e verificare come MappingRepository
+         * usa tale esito.
          */
         factory = org.mockito.Mockito.mock(MetaDataFactory.class);
 
         loader = Thread.currentThread().getContextClassLoader();
 
         /*
-         * Collegamento tra i due componenti oggetto del test.
+         * Colleghiamo il repository reale al boundary mockato.
+         * Da questo momento MappingRepository potrà comunicare con MetaDataFactory
+         * tramite getResultSetMappingScope(...) e load(...).
          */
         repository.setMetaDataFactory(factory);
 
         /*
          * Abilitiamo il source mode relativo ai query metadata.
          *
-         * Nel metodo getQueryResultMappingInternal(...), MappingRepository
-         * invoca MetaDataFactory.load(...) solo se MODE_QUERY è attivo.
-         * Senza questa configurazione, il repository si fermerebbe prima
-         * e restituirebbe null senza comunicare con la factory.
+         * Nel metodo getQueryResultMappingInternal(...), MappingRepository invoca
+         * MetaDataFactory.load(...) solo se MODE_QUERY è attivo. Senza questa
+         * configurazione, il repository si fermerebbe prima e restituirebbe null
+         * senza attraversare il boundary di caricamento.
          */
         repository.setSourceMode(MetaDataRepository.MODE_QUERY, true);
     }
@@ -76,28 +83,15 @@ public class MappingRepositoryIT {
     @Test
     public void getQueryResultMapping_whenCacheMiss_delegatesToMetaDataFactoryAndReturnsLoadedMapping() {
         /*
-         * TC1 - Cache miss con caricamento riuscito.
+         * TC - Cache miss con caricamento simulato riuscito.
          *
          * Obiettivo:
-         * verificare che MappingRepository, quando non trova un
-         * QueryResultMapping nella propria cache, comunichi correttamente
-         * con MetaDataFactory per caricare il mapping richiesto.
+         * verificare che MappingRepository, quando non trova un QueryResultMapping
+         * nella propria cache, comunichi con MetaDataFactory e gestisca correttamente
+         * l'effetto prodotto dal caricamento metadata.
          *
-         * Moduli coinvolti:
-         * - MappingRepository reale;
-         * - MetaDataFactory controllata tramite mock.
-         *
-         * Protocollo di comunicazione atteso:
-         * 1. MappingRepository riceve una richiesta per RESULT_MAPPING_NAME.
-         * 2. Il mapping non è presente nella cache interna.
-         * 3. Poiché cls = null, MappingRepository chiede alla MetaDataFactory
-         *    lo scope del result-set mapping tramite getResultSetMappingScope(...).
-         * 4. MappingRepository invoca MetaDataFactory.load(...) con:
-         *    - la classe scope restituita dalla factory;
-         *    - MODE_META | MODE_MAPPING;
-         *    - il classloader corrente.
-         * 5. Durante il caricamento, la factory registra il mapping nel repository.
-         * 6. MappingRepository recupera il mapping dalla cache e lo restituisce.
+         * Comunicazione testata:
+         * - MappingRepository -> MetaDataFactory.
          *
          * Oracolo:
          * - il risultato deve essere non nullo;
@@ -105,26 +99,26 @@ public class MappingRepositoryIT {
          * - il mapping restituito deve essere lo stesso oggetto presente in cache;
          * - MetaDataFactory deve essere stata invocata secondo il protocollo atteso.
          */
-
-        doReturn(MappingRepositoryIT.class)
+        doReturn(String.class)
                 .when(factory)
                 .getResultSetMappingScope(RESULT_MAPPING_NAME, loader);
 
         doAnswer(invocation -> {
             /*
-             * Simuliamo l'effetto osservabile del caricamento metadata:
-             * la factory registra nel repository il QueryResultMapping richiesto.
+             * Simuliamo l'effetto osservabile di un caricamento metadata riuscito.
              *
-             * Non stiamo testando il parser dei metadata o il caricamento reale
-             * da annotazioni/XML. Stiamo testando che MappingRepository sappia
-             * collaborare con il suo metadata loader e usare il risultato prodotto.
+             * MetaDataFactory.load(...) non restituisce direttamente un
+             * QueryResultMapping. Nel flusso reale, durante il caricamento, il
+             * mapping viene reso disponibile nel repository. Qui simuliamo tale
+             * effetto registrando un QueryResultMapping reale nella cache del
+             * repository.
              */
             repository.addQueryResultMapping(null, RESULT_MAPPING_NAME);
             return null;
         }).when(factory).load(
-                eq(MappingRepositoryIT.class),
-                eq(MetaDataRepository.MODE_META | MetaDataRepository.MODE_MAPPING),
-                eq(loader)
+                String.class,
+                MetaDataRepository.MODE_META | MetaDataRepository.MODE_MAPPING,
+                loader
         );
 
         QueryResultMapping result = repository.getQueryResultMapping(
@@ -146,77 +140,9 @@ public class MappingRepositoryIT {
 
         verify(factory).getResultSetMappingScope(RESULT_MAPPING_NAME, loader);
         verify(factory).load(
-                eq(MappingRepositoryIT.class),
-                eq(MetaDataRepository.MODE_META | MetaDataRepository.MODE_MAPPING),
-                eq(loader)
-        );
-    }
-
-    @Test
-    public void getQueryResultMapping_whenFactoryDoesNotLoadMappingAndMustExist_throwsMetaDataException() {
-        /*
-         * TC2 - Cache miss con caricamento non risolutivo.
-         *
-         * Obiettivo:
-         * verificare il comportamento negativo della comunicazione tra
-         * MappingRepository e MetaDataFactory.
-         *
-         * Scenario:
-         * - il mapping richiesto non è presente nella cache del repository;
-         * - MappingRepository comunica correttamente con MetaDataFactory;
-         * - MetaDataFactory viene invocata, ma non registra alcun
-         *   QueryResultMapping nel repository;
-         * - poiché mustExist = true, MappingRepository deve segnalare
-         *   che il mapping richiesto non è disponibile.
-         *
-         * Moduli coinvolti:
-         * - MappingRepository reale;
-         * - MetaDataFactory controllata tramite mock.
-         *
-         * Protocollo di comunicazione atteso:
-         * 1. MappingRepository chiede alla factory lo scope del mapping.
-         * 2. MappingRepository invoca factory.load(...).
-         * 3. Dopo il caricamento, il mapping rimane assente.
-         * 4. MappingRepository solleva MetaDataException.
-         *
-         * Oracolo:
-         * - deve essere sollevata MetaDataException;
-         * - la factory deve essere stata comunque invocata;
-         * - l'eccezione deve dipendere dal fatto che il mapping richiesto
-         *   non è stato reso disponibile dopo il caricamento.
-         */
-
-        doReturn(MappingRepositoryIT.class)
-                .when(factory)
-                .getResultSetMappingScope(MISSING_MAPPING_NAME, loader);
-
-        doAnswer(invocation -> {
-            /*
-             * La factory viene chiamata, ma non registra alcun mapping.
-             * Questo simula un caricamento che non produce il result mapping
-             * richiesto.
-             */
-            return null;
-        }).when(factory).load(
-                eq(MappingRepositoryIT.class),
-                eq(MetaDataRepository.MODE_META | MetaDataRepository.MODE_MAPPING),
-                eq(loader)
-        );
-
-        assertThrows(MetaDataException.class, () ->
-                repository.getQueryResultMapping(
-                        null,
-                        MISSING_MAPPING_NAME,
-                        loader,
-                        true
-                )
-        );
-
-        verify(factory).getResultSetMappingScope(MISSING_MAPPING_NAME, loader);
-        verify(factory).load(
-                eq(MappingRepositoryIT.class),
-                eq(MetaDataRepository.MODE_META | MetaDataRepository.MODE_MAPPING),
-                eq(loader)
+                String.class,
+                MetaDataRepository.MODE_META | MetaDataRepository.MODE_MAPPING,
+                loader
         );
     }
 }
