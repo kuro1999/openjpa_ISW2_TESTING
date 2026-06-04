@@ -39,7 +39,7 @@ public class MappingRepositoryBBTest {
          *
          * - B1: name non null e non vuoto.
          *
-         * Oracolo rafforzato:
+         * Oracolo:
          * il metodo deve restituire un QueryResultMapping non null.
          */
 
@@ -229,7 +229,7 @@ public class MappingRepositoryBBTest {
 
 
     @Test
-    public void getQueryResultMapping_withNullClassAndMustExistFalseAndMockedMetaDataFactory_returnsNullWhenNoMappingWasAdded() {
+    public void getQueryResultMapping_withNullClassAndMustExistFalse_returnsNull() {
         /*
          * Category Partition:
          * - A2: cls null.
@@ -245,11 +245,12 @@ public class MappingRepositoryBBTest {
          * il metodo deve restituire null.
          */
         setUpRepositoryWithMockedFactory();
+        repository.addQueryResultMapping(String.class, MAPPING_NAME);
 
-        QueryResultMapping result = repository.getQueryResultMapping(null, MAPPING_NAME, loader, false);
+        QueryResultMapping result =
+                repository.getQueryResultMapping(null, MAPPING_NAME, loader, false);
 
-        assertNull("No mapping was added or loaded, so the result should be null", result);
-
+        assertNull("A mapping defined for String.class should not be resolved when cls is null", result);
     }
 
 
@@ -269,10 +270,12 @@ public class MappingRepositoryBBTest {
          * il metodo deve restituire null.
          */
         setUpRepositoryWithMockedFactory();
+        repository.addQueryResultMapping(String.class, MAPPING_NAME);
 
-        QueryResultMapping result = repository.getQueryResultMapping(String.class, null, loader, false);
+        QueryResultMapping result =
+                repository.getQueryResultMapping(String.class, null, loader, false);
 
-        assertNull("With null name, the result should be null", result);
+        assertNull("With null name, no mapping should be resolved", result);
     }
 
     @Test
@@ -291,10 +294,12 @@ public class MappingRepositoryBBTest {
          * il metodo deve restituire null.
          */
         setUpRepositoryWithMockedFactory();
+        repository.addQueryResultMapping(String.class, MAPPING_NAME);
 
-        QueryResultMapping result = repository.getQueryResultMapping(String.class, "", loader, false);
+        QueryResultMapping result =
+                repository.getQueryResultMapping(String.class, "", loader, false);
 
-        assertNull("With empty name, the result should be null", result);
+        assertNull("With empty name, no mapping should be resolved", result);
     }
 
 
