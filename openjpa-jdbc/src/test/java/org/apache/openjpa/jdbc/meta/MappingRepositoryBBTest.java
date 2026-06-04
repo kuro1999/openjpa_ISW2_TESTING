@@ -1,6 +1,7 @@
 package org.apache.openjpa.jdbc.meta;
 
 import org.apache.openjpa.meta.MetaDataFactory;
+import org.apache.openjpa.util.MetaDataException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -125,7 +126,6 @@ public class MappingRepositoryBBTest {
     ###########################################################################
      */
 
-    @Ignore("Oracolo iniziale scartato: senza setup del repository il metodo non restituisce null, ma lancia NullPointerException per MetaDataFactory nulla")
     @Test
     public void getQueryResultMapping_withNonNullInputsAndMustExistFalse_returnsNullWhenNoMappingWasAdded() {
         /*
@@ -138,28 +138,6 @@ public class MappingRepositoryBBTest {
          *
          * - D2: mustExist = false.
          *
-         * Oracolo:
-         * il metodo deve restituire null.
-         */
-
-        QueryResultMapping result = repository.getQueryResultMapping(String.class, MAPPING_NAME, loader, false);
-
-        assertNull("No mapping was added, so the result should be null", result);
-    }
-
-
-    @Test
-    public void getQueryResultMapping_withNonNullInputsAndMustExistFalseAndMockedMetaDataFactory_returnsNullWhenNoMappingWasAdded() {
-        /*
-         * Category Partition:
-         * - A1: cls non null.
-         *
-         * - B1: name non null e non vuoto.
-         *
-         * - C1: loader non null.
-         *
-         * - D2: mustExist = false.
-         *
          *
          * Oracolo:
          * il metodo deve restituire null.
@@ -173,8 +151,9 @@ public class MappingRepositoryBBTest {
     }
 
 
+    @Ignore("oracolo errato")
     @Test
-    public void getQueryResultMapping_withNonNullInputsAndMustExistTrueAndMockedMetaDataFactory_throwsRuntimeExceptionWhenNoMappingWasAdded() {
+    public void getQueryResultMapping_withNonNullInputsAndMustExistTrue_throwsNullPointerExceptionWhenNoMappingWasAdded() {
         /*
          * Category Partition:
          * - A1: cls non null.
@@ -186,12 +165,34 @@ public class MappingRepositoryBBTest {
          * - D1: mustExist = true.
          *
          * Oracolo:
-         * il metodo deve lanciare un eccezzione causa no added mapping
+         * il metodo deve lanciare un eccezzione di tipo NullPointer causa no added mapping
          */
 
         setUpRepositoryWithMockedFactory();
 
-        assertThrows(RuntimeException.class, () -> repository.getQueryResultMapping(String.class, MAPPING_NAME, loader, true));
+        assertThrows(NullPointerException.class, () -> repository.getQueryResultMapping(String.class, MAPPING_NAME, loader, true));
+
+    }
+
+    @Test
+    public void getQueryResultMapping_withNonNullInputsAndMustExistTrue_throwsMetadataExceptionWhenNoMappingWasAdded() {
+        /*
+         * Category Partition:
+         * - A1: cls non null.
+         *
+         * - B1: name non null e non vuoto.
+         *
+         * - C1: loader non null.
+         *
+         * - D1: mustExist = true.
+         *
+         * Oracolo:
+         * il metodo deve lanciare un eccezzione di tipo MetaData causa no added mapping
+         */
+
+        setUpRepositoryWithMockedFactory();
+
+        assertThrows(MetaDataException.class, () -> repository.getQueryResultMapping(String.class, MAPPING_NAME, loader, true));
 
     }
 
