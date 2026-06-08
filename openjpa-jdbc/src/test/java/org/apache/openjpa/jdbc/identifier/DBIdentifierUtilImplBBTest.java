@@ -29,6 +29,7 @@ public class DBIdentifierUtilImplBBTest {
     private DBIdentifierUtilImpl util;
     private IdentifierConfiguration config;
     private IdentifierRule rule;
+    private static String DEFAULT_DELIMITED_CASE;
 
 
     @BeforeClass
@@ -40,6 +41,8 @@ public class DBIdentifierUtilImplBBTest {
          * Non creiamo mock qui, perché i mock devono essere nuovi per ogni test.
          */
         valididentifiertype = DBIdentifier.DBIdentifierType.TABLE;
+        DEFAULT_DELIMITED_CASE = "preserve";
+
     }
 
     @Before
@@ -64,9 +67,13 @@ public class DBIdentifierUtilImplBBTest {
          */
         when(config.getLeadingDelimiter()).thenReturn("\"");
         when(config.getTrailingDelimiter()).thenReturn("\"");
+        /*
+         * Policy di case per gli identificatori delimitati.
+         */
+        when(config.getDelimitedCase()).thenReturn(DEFAULT_DELIMITED_CASE);
 
         /*
-         * Configurazione utile per fromDBName(...).
+         * Configurazione utile per fromDBName.
          */
         when(config.getSupportsDelimitedIdentifiers()).thenReturn(false);
 
