@@ -37,11 +37,10 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B1: name non null e non vuoto.
          *
          * Oracolo:
-         * il metodo deve restituire un QueryResultMapping non null.
+         * il metodo deve restituire un QueryResultMapping non null con nome coerente rispetto all'input e tipi string.class.
          */
 
         QueryResultMapping result = repository.addQueryResultMapping(String.class, MAPPING_NAME);
@@ -59,12 +58,11 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A2: cls null.
-         *
          * - B1: name non null e non vuoto.
          *
          * Oracolo:
          * il metodo deve restituire un QueryResultMapping
-         * non null con nome coerente con l'input.
+         * non null con nome coerente con l'input e tipo nullo.
          */
 
         QueryResultMapping result = repository.addQueryResultMapping(
@@ -84,11 +82,10 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B2: name null.
          *
          * Oracolo:
-         * il metodo deve restituire un QueryResultMapping non null
+         * il metodo deve restituire un QueryResultMapping non null di tipo string.class e nome null
          */
 
         QueryResultMapping result = repository.addQueryResultMapping(String.class, null);
@@ -104,9 +101,7 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B3: name vuoto.
-         *
          * Oracolo:
          * il metodo deve restituire un QueryResultMapping non null con nome uguale alla stringa vuota.
          */
@@ -131,13 +126,9 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B1: name non null e non vuoto.
-         *
          * - C1: loader non null.
-         *
          * - D2: mustExist = false.
-         *
          *
          * Oracolo:
          * il metodo deve restituire null.
@@ -157,11 +148,8 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B1: name non null e non vuoto.
-         *
          * - C1: loader non null.
-         *
          * - D1: mustExist = true.
          *
          * Oracolo:
@@ -179,11 +167,8 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B1: name non null e non vuoto.
-         *
          * - C1: loader non null.
-         *
          * - D1: mustExist = true.
          *
          * Oracolo:
@@ -203,15 +188,12 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B1: name non null e non vuoto.
-         *
          * - C1: loader non null.
-         *
          * - D1: mustExist = true.
          *
          * Oracolo:
-         * il metodo deve restituire il mapping reso disponibile.
+         * il metodo deve restituire il QueryResultMapping non nullo con nome coerente con l'input e di tipo String.class.
          */
         setUpRepositoryWithMockedFactory();
 
@@ -234,11 +216,8 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A2: cls null.
-         *
          * - B1: name non null e non vuoto.
-         *
          * - C1: loader non null.
-         *
          * - D2: mustExist = false.
          *
          *
@@ -260,11 +239,8 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B2: name null.
-         *
          * - C1: loader non null.
-         *
          * - D2: mustExist = false.
          *
          * Oracolo:
@@ -284,11 +260,8 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B3: name vuoto.
-         *
          * - C1: loader non null.
-         *
          * - D2: mustExist = false.
          *
          * Oracolo:
@@ -309,11 +282,8 @@ public class MappingRepositoryBBTest {
         /*
          * Category Partition:
          * - A1: cls non null.
-         *
          * - B1: name non null e non vuoto.
-         *
          * - C2: loader null.
-         *
          * - D2: mustExist = false.
          *
          * Oracolo:

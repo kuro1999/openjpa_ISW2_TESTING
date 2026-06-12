@@ -2,6 +2,7 @@ package org.apache.openjpa.jdbc.identifier;
 
 import org.apache.openjpa.jdbc.schema.NameSet;
 import org.apache.openjpa.lib.identifier.IdentifierConfiguration;
+import org.apache.openjpa.lib.identifier.IdentifierRule;
 import org.junit.*;
 
 import static org.junit.Assert.*;
@@ -17,6 +18,8 @@ public class DBIdentifierUtilImplMTTest {
 
     private DBIdentifierUtilImpl util;
     private IdentifierConfiguration config;
+    private IdentifierRule rule;
+
 
 
     @Before
@@ -25,6 +28,15 @@ public class DBIdentifierUtilImplMTTest {
          * Qui creiamo mock e SUT nuovi, così ogni test parte da uno stato pulito.
          */
         config = mock(IdentifierConfiguration.class);
+        rule = mock(IdentifierRule.class);
+
+        /*
+         * Configurazione del mock IdentifierConfiguration.
+         */
+        when(config.delimitAll()).thenReturn(false);
+        when(config.getIdentifierRule(any())).thenReturn(rule);
+        when(config.getDefaultIdentifierRule()).thenReturn(rule);
+
 
         when(config.delimitAll()).thenReturn(false);
 
@@ -51,20 +63,9 @@ public class DBIdentifierUtilImplMTTest {
         /*
          * Mutation-guided test 1
          *
-         * Obiettivo:
-         *   rafforzare fromDBName(...) sui rami:
-         *     else if (delimCase.equals(CASE_LOWER))
-         *     if (nonDelimCase.equals(CASE_UPPER))
-         *
-         * Caso:
-         *   delimitedCase = lower
-         *   schemaCase = upper
-         *   delimitAll = false
-         *   name = "customer"
-         *
-         * In questo scenario caseName diventa "CUSTOMER", quindi è diverso
-         * dal nome originale "customer". La differenza deve causare la
-         * delimitazione dell'identificatore.
+         * Oracolo:
+         *   il metodo deve restituire un DBIdentifier non nullo, di tipo TABLE,
+         *   delimitato e con nome pari a "\"customer\"".
          */
         when(config.getSupportsDelimitedIdentifiers()).thenReturn(true);
         when(config.getDelimitedCase()).thenReturn("lower");
@@ -87,17 +88,10 @@ public class DBIdentifierUtilImplMTTest {
         /*
          * Mutation-guided test 2
          *
-         * Obiettivo:
-         *   rafforzare il ramo:
-         *     if (validName.isDelimited())
-         *     else if (delimCase.equals(CASE_UPPER))
-         *
-         * Caso:
-         *   identificatore delimitato
-         *   delimitedCase = upper
-         *
          * Oracolo:
-         *   il nome deve restare delimitato e deve essere convertito in upper-case.
+         *   il metodo deve restituire un DBIdentifier non nullo, di tipo TABLE,
+         *   delimitato e con nome convertito in upper-case,
+         *   pari a "\"CUSTOMER\"".
          */
         when(config.getDelimitedCase()).thenReturn("upper");
 
@@ -127,21 +121,9 @@ public class DBIdentifierUtilImplMTTest {
         /*
          * Mutation-guided test 3
          *
-         * Obiettivo:
-         *   rafforzare la logica:
-         *     if (nameLen + chars > maxLen)
-         *         validName = DBIdentifier.truncate(...);
-         *
-         * Caso:
-         *   name = "abcdef"
-         *   maxLen = 6
-         *   il nome iniziale è già lungo quanto maxLen
-         *   il primo nome è già occupato
-         *
          * Oracolo:
-         *   per aggiungere il suffisso "1", il metodo deve prima troncare
-         *   "abcdef" in "abcde", poi produrre "abcde1", infine convertirlo
-         *   in upper-case.
+         *   il metodo deve restituire un DBIdentifier non nullo, di tipo COLUMN,
+         *   non delimitato, con nome pari a "ABCDE1" e lunghezza uguale a 6.
          */
         NameSet nameSet = mock(NameSet.class);
 

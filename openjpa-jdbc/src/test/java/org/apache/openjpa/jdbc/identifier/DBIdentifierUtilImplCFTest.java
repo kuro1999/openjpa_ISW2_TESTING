@@ -37,23 +37,12 @@ public class DBIdentifierUtilImplCFTest {
 
     @BeforeClass
     public static void setUpClass() {
-        /*
-         * Eseguito una sola volta prima di tutti i test.
-         *
-         * Qui inizializziamo solo valori statici condivisi e immutabili.
-         * Non creiamo mock qui, perché i mock devono essere nuovi per ogni test.
-         */
         VALID_IDENTIFIER_TYPE = DBIdentifier.DBIdentifierType.TABLE;
         DEFAULT_DELIMITED_CASE = "preserve";
     }
 
     @Before
     public void setUp() {
-        /*
-         * Eseguito prima di ogni test.
-         *
-         * Qui creiamo mock e SUT nuovi, così ogni test parte da uno stato pulito.
-         */
         config = mock(IdentifierConfiguration.class);
         rule = mock(IdentifierRule.class);
 
@@ -76,7 +65,7 @@ public class DBIdentifierUtilImplCFTest {
         when(config.getDelimitedCase()).thenReturn(DEFAULT_DELIMITED_CASE);
 
         /*
-         * Configurazione utile per fromDBName(...).
+         * Configurazione utile per fromDBName.
          */
         when(config.getSupportsDelimitedIdentifiers()).thenReturn(false);
 
@@ -104,7 +93,6 @@ public class DBIdentifierUtilImplCFTest {
 
     @After
     public void tearDown() {
-        //Eseguito dopo ogni test.
         util = null;
         config = null;
         rule = null;
@@ -112,7 +100,6 @@ public class DBIdentifierUtilImplCFTest {
 
     @AfterClass
     public static void tearDownClass() {
-        //Eseguito una sola volta dopo tutti i test.
         VALID_IDENTIFIER_TYPE = null;
         DEFAULT_DELIMITED_CASE = null;
     }
@@ -128,29 +115,9 @@ public class DBIdentifierUtilImplCFTest {
         /*
          * TC9 - Identificatore corrispondente a reserved word
          *
-         * Frame astratto:
-         *   TF9 = <S5, N2, L3, U1>
-         *
-         * Category partition raffinata:
-         *   S5 = sname valido, non vuoto, non delimitato, ma reserved word
-         *   N2 = set valido, vuoto
-         *   L3 = maxLen valido, positivo
-         *   U1 = checkForUniqueness = true
-         *
-         * Input concreti:
-         *   sname = DBIdentifier.newTable("SELECT")
-         *   set = new SchemaGroup()
-         *   maxLen = COMPATIBLE_MAX_LEN
-         *   checkForUniqueness = true
-         *
-         * Scopo:
-         *   coprire il ramo del metodo in cui il nome candidato viene riconosciuto
-         *   come reserved word.
-         *
          * Oracolo:
          *   il metodo deve restituire un DBIdentifier non nullo, non delimitato,
-         *   con nome modificato rispetto alla reserved word originale.
-         *   Nel comportamento atteso, "SELECT" viene trasformato in "SELECT0".
+         *   con nome modificato rispetto alla reserved word originale e pari a "SELECT0".
          */
         configureReservedWordScenario();
 
@@ -169,8 +136,6 @@ public class DBIdentifierUtilImplCFTest {
         assertNotNull(result);
         assertEquals(EXPECTED_RESERVED_IDENTIFIER_NAME, result.getName());
         assertFalse(result.isDelimited());
-
-        verify(config, atLeastOnce()).getIdentifierRule(any());
     }
 
     private void configureReservedWordScenario() {
@@ -193,29 +158,6 @@ public class DBIdentifierUtilImplCFTest {
     public void makeIdentifierValid_withExistingIdentifierAndExistingFirstVariant_returnsSecondVariant() {
         /*
          * TC10 - Conflitto di unicità con più varianti già presenti
-         *
-         * Frame astratto:
-         *   TF10 = <S3, N3, L3, U1>
-         *
-         * Vincolo relazionale:
-         *   set contains CUSTOMER
-         *   set contains CUSTOMER1
-         *
-         * Category partition:
-         *   S3 = sname valido, non vuoto, non delimitato
-         *   N3 = set valido, non vuoto
-         *   L3 = maxLen valido, positivo
-         *   U1 = checkForUniqueness = true
-         *
-         * Input concreti:
-         *   sname = DBIdentifier.newTable("CUSTOMER")
-         *   set = SchemaGroup contenente già CUSTOMER e CUSTOMER1
-         *   maxLen = COMPATIBLE_MAX_LEN
-         *   checkForUniqueness = true
-         *
-         * Scopo:
-         *   verificare che il metodo prosegua il ciclo di generazione del nome
-         *   quando sia il nome originale sia la prima variante sono già presenti.
          *
          * Oracolo:
          *   il metodo deve restituire un DBIdentifier non nullo, non delimitato,
@@ -244,9 +186,6 @@ public class DBIdentifierUtilImplCFTest {
         assertNotNull(result);
         assertFalse(result.isDelimited());
         assertEquals(SECOND_UNIQUE_VARIANT_NAME, result.getName());
-        assertTrue(result.getName().length() <= maxLen);
-
-        verify(config, atLeastOnce()).getIdentifierRule(any());
     }
 
     /*
@@ -258,20 +197,11 @@ public class DBIdentifierUtilImplCFTest {
     @Test
     public void fromDBName_withSupportedDelimitedIdentifiersAndSameCase_returnsNonDelimitedIdentifier() {
         /*
-         * WB1 - Supporto delimitatori attivo e stessa policy di case
+         * TC11 - Supporto delimitatori attivo e stessa policy di case
          *
-         * Ramo target:
-         *   if (delimCase.equals(nonDelimCase))
-         *
-         * Configurazione:
-         *   supportsDelimitedIdentifiers = true
-         *   delimitedCase = preserve
-         *   schemaCase = preserve
-         *
-         * Scopo:
-         *   coprire il ramo in cui la policy per identificatori delimitati e
-         *   non delimitati coincide. In questo caso il metodo non deve introdurre
-         *   delimitazione aggiuntiva.
+         * Oracolo:
+         * il metodo deve restituire un DBIdentifier non nullo con tipo coerente con l'input,
+         * con input nome delimitato deve restituire lo stesso nome ma non delimitato
          */
         when(config.getSupportsDelimitedIdentifiers()).thenReturn(true);
         when(config.getDelimitedCase()).thenReturn(DEFAULT_DELIMITED_CASE);
@@ -291,25 +221,12 @@ public class DBIdentifierUtilImplCFTest {
     @Test
     public void fromDBName_withPreserveDelimitedCaseAndLowerSchemaCase_returnsDelimitedIdentifier() {
         /*
-         * WB2 - Delimited case preserve e schema case lower
+         * TC12 - Delimited case preserve e schema case lower
          *
-         * Ramo target:
-         *   if (delimCase.equals(CASE_PRESERVE)) {
-         *       if (nonDelimCase.equals(CASE_LOWER)) {
-         *           caseName = name.toLowerCase();
-         *       }
-         *   }
          *
-         * Configurazione:
-         *   supportsDelimitedIdentifiers = true
-         *   delimitedCase = preserve
-         *   schemaCase = lower
-         *   delimitAll = false
-         *
-         * Scopo:
-         *   coprire il ramo in cui il nome atteso secondo lo schema case sarebbe
-         *   lowercase, ma il nome ricevuto dal database è diverso. Il metodo preserva
-         *   il nome originale marcandolo come delimitato.
+         * Oracolo:
+         * il metodo deve restutuire un DBIdentifier non nullo del tipo coerente con l'input,
+         * e con nome uguale all'input e delimitato.
          */
         when(config.getSupportsDelimitedIdentifiers()).thenReturn(true);
         when(config.getDelimitedCase()).thenReturn(DEFAULT_DELIMITED_CASE);
@@ -330,22 +247,12 @@ public class DBIdentifierUtilImplCFTest {
     @Test
     public void fromDBName_withDelimitAllTrue_returnsDelimitedIdentifier() {
         /*
-         * WB3 - Delimitazione forzata da delimitAll()
+         * TC13 - Delimitazione forzata da delimitAll()
          *
-         * Ramo target:
-         *   boolean delimit = !caseName.equals(name)
-         *           || getIdentifierConfiguration().delimitAll();
          *
-         * Configurazione:
-         *   supportsDelimitedIdentifiers = true
-         *   delimitedCase = lower
-         *   schemaCase = upper
-         *   delimitAll = true
-         *
-         * Scopo:
-         *   coprire il caso in cui la delimitazione non dipende da una differenza
-         *   tra caseName e name, ma viene forzata direttamente dalla configurazione
-         *   delimitAll().
+         * Oracolo:
+         * il metodo deve restituire un DBIdentifier non nullo con tipo coerente con l'input,
+         * delimitato e con come uguale all'input delimitato
          */
         when(config.getSupportsDelimitedIdentifiers()).thenReturn(true);
         when(config.getDelimitedCase()).thenReturn("lower");

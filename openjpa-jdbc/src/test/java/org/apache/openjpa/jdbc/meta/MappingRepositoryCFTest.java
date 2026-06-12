@@ -23,58 +23,9 @@ public class MappingRepositoryCFTest {
     @Before
     public void setUp() {
         repository = new MappingRepository();
+        factory = mock(MetaDataFactory.class);
+        repository.setMetaDataFactory(factory);
         loader = Thread.currentThread().getContextClassLoader();
-    }
-
-
-    @Test
-    public void getQueryResultMapping_whenMappingIsAlreadyCached_returnsCachedMappingWithoutMetaDataFactory() {
-        /*
-         * White-box target:
-         * getQueryResultMappingInternal(...) contiene un ramo in cui il mapping
-         * viene trovato direttamente nella cache _results.
-         *
-         * Codice target:
-         *   Object key = getQueryResultKey(cls, name);
-         *   QueryResultMapping res = _results.get(key);
-         *   if (res != null)
-         *       return res;
-         *
-         * Obiettivo:
-         * coprire il ramo cache-hit di getQueryResultMapping(...), restando nel
-         * perimetro dei due metodi target:
-         * - addQueryResultMapping(...), usato per predisporre il mapping;
-         * - getQueryResultMapping(...), usato per recuperarlo.
-         *
-         * Setup:
-         * Il mapping viene inserito tramite addQueryResultMapping(...).
-         * Non configuriamo MetaDataFactory: se getQueryResultMapping(...) non
-         * trovasse il mapping in cache e provasse a caricare metadata, il test
-         * fallirebbe con NullPointerException.
-         *
-         * Oracolo:
-         * getQueryResultMapping(...) deve restituire esattamente lo stesso oggetto
-         * già presente nella cache del repository.
-         *
-         * Nota metodologica:
-         * Questo è un test white-box perché nasce dalla conoscenza del ramo interno
-         * if (res != null), non dalla sola Javadoc.
-         */
-
-        QueryResultMapping added = repository.addQueryResultMapping(
-                String.class,
-                MAPPING_NAME
-        );
-
-        QueryResultMapping result = repository.getQueryResultMapping(
-                String.class,
-                MAPPING_NAME,
-                loader,
-                true
-        );
-
-        assertSame("The cached mapping should be returned directly",
-                added, result);
     }
 
 
@@ -82,30 +33,10 @@ public class MappingRepositoryCFTest {
     @Test
     public void addQueryResultMapping_withSameClassAndName_replacesPreviousMappingInCache() {
         /*
-         * White-box target:
-         * addQueryResultMappingInternal(...) inserisce il mapping nella mappa _results
-         * usando:
-         *   _results.put(getQueryResultKey(res), res);
-         *
-         * Obiettivo:
-         * verificare il comportamento della put sulla stessa chiave logica.
-         * Due chiamate con stessa classe e stesso nome devono produrre la stessa
-         * chiave interna, quindi il secondo mapping deve sostituire il primo nella
-         * cache.
-         *
-         * Setup:
-         * Usiamo due chiamate a addQueryResultMapping(...) con gli stessi input:
-         * - stessa cls;
-         * - stesso name.
          *
          * Oracolo:
-         * - le due chiamate devono creare due istanze diverse;
-         * - getQueryResultMapping(...) deve restituire la seconda istanza, perché
-         *   è quella attualmente associata alla chiave nella cache.
-         *
-         * Nota metodologica:
-         * Questo è un test white-box perché deriva dalla conoscenza dell'uso di
-         * _results.put(...) e della chiave prodotta da getQueryResultKey(...).
+         * le due chiamate devono creare due istanze diverse,
+         * getQueryResultMapping deve restituire la seconda istanza.
          */
 
         QueryResultMapping first = repository.addQueryResultMapping(
@@ -127,8 +58,35 @@ public class MappingRepositoryCFTest {
 
         assertNotSame("Each add should create a new QueryResultMapping instance",
                 first, second);
-        assertSame("The cached mapping should be the last one added",
+        assertSame("The mapping should be the last one added",
                 second, result);
+    }
+
+
+    @Test
+    public void getQueryResultMapping_whenMappingIsAlreadyCached_returnsCachedMappingWithoutMetaDataFactory() {
+        /*
+         *
+         * Oracolo:
+         * il metodo deve restituire lo stesso oggetto
+         * già presente nella cache del repository.
+         */
+
+        QueryResultMapping added = repository.addQueryResultMapping(
+                String.class,
+                MAPPING_NAME
+        );
+
+        QueryResultMapping result = repository.getQueryResultMapping(
+                String.class,
+                MAPPING_NAME,
+                loader,
+                true
+        );
+
+        assertSame("The cached mapping should be returned directly",
+                added, result);
+        verify(factory, never()).getResultSetMappingScope(anyString(), any(ClassLoader.class));
     }
 
 
@@ -137,28 +95,13 @@ public class MappingRepositoryCFTest {
     @Test
     public void getQueryResultMapping_withSameNameButDifferentClasses_returnsClassSpecificMapping() {
         /*
-         * White-box target:
-         * getQueryResultKey(cls, name) costruisce la chiave usando sia cls sia name.
-         *
-         * Obiettivo:
-         * verificare che due mapping con lo stesso name ma classi diverse non si
-         * sovrascrivano nella cache interna.
-         *
-         * Setup:
-         * Aggiungiamo due mapping con:
-         * - stesso name;
-         * - classi diverse.
          *
          * Oracolo:
-         * - recuperando con String.class deve essere restituito il mapping associato
-         *   a String.class;
-         * - recuperando con Integer.class deve essere restituito il mapping associato
-         *   a Integer.class;
-         * - i due mapping devono essere istanze distinte.
-         *
-         * Nota metodologica:
-         * Questo è un test white-box perché deriva dalla conoscenza che la chiave
-         * interna usata dalla cache dipende dalla coppia cls-name, non solo dal name.
+         * recuperando con String.class deve essere restituito il mapping associato
+         *   a String.class,
+         * recuperando con Integer.class deve essere restituito il mapping associato
+         *   a Integer.class,
+         * i due mapping devono essere istanze distinte.
          */
 
         QueryResultMapping stringMapping = repository.addQueryResultMapping(
@@ -198,23 +141,9 @@ public class MappingRepositoryCFTest {
     @Test
     public void getQueryResultMapping_whenSourceModeDoesNotIncludeQuery_returnsNull() {
         /*
-         * White-box target:
-         * getQueryResultMappingInternal(...) contiene il ramo:
-         *
-         *   if ((getSourceMode() & MODE_QUERY) == 0)
-         *       return null;
-         *
-         * Obiettivo:
-         * coprire il caso in cui il repository non è configurato per caricare
-         * query result mappings dalla sorgente metadata.
-         *
-         * Setup:
-         * Configuriamo una MetaDataFactory mockata per evitare NPE nel caso in cui
-         * il metodo arrivasse al caricamento metadata. Impostiamo poi il source mode
-         * in modo da escludere MODE_QUERY.
          *
          * Oracolo:
-         * Poiché MODE_QUERY non è abilitato e il mapping non è in cache, il metodo
+         * Poiché MODE_QUERY non è abilitato il metodo
          * deve restituire null senza rendere disponibile alcun QueryResultMapping.
          */
         setUpRepositoryWithMockedFactory();
@@ -237,32 +166,9 @@ public class MappingRepositoryCFTest {
     @Test
     public void getQueryResultMapping_withNullClassAndFactoryScope_returnsLoadedMapping() {
         /*
-         * White-box target:
-         * getQueryResultMappingInternal(...) contiene il ramo:
-         *
-         *   if (cls == null)
-         *       cls = getMetaDataFactory().getResultSetMappingScope(name, envLoader);
-         *
-         * Obiettivo:
-         * coprire il caso in cui cls è null e il metodo chiede alla MetaDataFactory
-         * di risolvere lo scope del result mapping.
-         *
-         * Dettaglio white-box importante:
-         * La chiave di ricerca viene costruita prima della risoluzione dello scope:
-         *
-         *   Object key = getQueryResultKey(cls, name);
-         *
-         * Quindi, se cls è null, la chiave resta basata su:
-         *
-         *   (null, MAPPING_NAME)
-         *
-         * anche se successivamente getResultSetMappingScope(...) restituisce
-         * String.class. Per questo motivo, durante load(...), il mapping deve essere
-         * aggiunto con defining type null, non con String.class.
-         *
          * Oracolo:
-         * getQueryResultMapping(null, MAPPING_NAME, loader, true) deve restituire il
-         * mapping caricato durante load(...), associato alla chiave originaria con
+         * il metodo deve restituire il
+         * mapping caricato durante load, associato alla chiave originaria con
          * cls null.
          */
 

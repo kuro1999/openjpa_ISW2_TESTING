@@ -21,31 +21,19 @@ public class MappingRepositoryMTTest {
     public void setUp() {
         repository = new MappingRepository();
         loader = Thread.currentThread().getContextClassLoader();
+        factory = mock(MetaDataFactory.class);
+        repository.setMetaDataFactory(factory);
     }
 
     @Test
     public void getQueryResultMapping_whenSourceModeHasMetaButNotQuery_returnsNullWithoutLoading() {
-        /*
-         * Motivazione PIT:
-         * PIT ha segnalato un survived sulla riga:
-         *
-         *   if ((getSourceMode() & MODE_QUERY) == 0)
-         *       return null;
-         *
-         * con mutazione:
-         *
-         *   bitwise AND -> OR
-         *
-         * Obiettivo:
-         * usare un sourceMode non nullo ma senza MODE_QUERY, ad esempio MODE_META.
-         * In questo modo il codice originale deve restituire null.
-         *
-         * Oracolo:
-         * getQueryResultMapping(...) deve restituire null e non deve invocare
-         * MetaDataFactory.load(...).
-         */
 
-        setUpRepositoryWithMockedFactory();
+        /*
+         * Oracolo:
+         *   se il repository è configurato con MODE_META ma senza MODE_QUERY,
+         *   il metodo deve restituire null e non deve invocare il caricamento
+         *   tramite MetaDataFactory.
+         */
 
         repository.setSourceMode(MetaDataRepository.MODE_META);
 
@@ -60,8 +48,5 @@ public class MappingRepositoryMTTest {
         verify(factory, never()).load(any(), anyInt(), any());
     }
 
-    private void setUpRepositoryWithMockedFactory() {
-        factory = mock(MetaDataFactory.class);
-        repository.setMetaDataFactory(factory);
-    }
+
 }

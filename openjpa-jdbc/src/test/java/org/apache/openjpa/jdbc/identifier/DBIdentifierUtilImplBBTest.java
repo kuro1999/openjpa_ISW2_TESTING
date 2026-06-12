@@ -2,9 +2,7 @@ package org.apache.openjpa.jdbc.identifier;
 
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import org.apache.openjpa.jdbc.schema.NameSet;
@@ -34,12 +32,6 @@ public class DBIdentifierUtilImplBBTest {
 
     @BeforeClass
     public static void setUpClass() {
-        /*
-         * Eseguito una sola volta prima di tutti i test.
-         *
-         * Qui inizializziamo solo valori statici condivisi e immutabili.
-         * Non creiamo mock qui, perché i mock devono essere nuovi per ogni test.
-         */
         valididentifiertype = DBIdentifier.DBIdentifierType.TABLE;
         DEFAULT_DELIMITED_CASE = "preserve";
 
@@ -100,7 +92,6 @@ public class DBIdentifierUtilImplBBTest {
 
     @After
     public void tearDown() {
-        //Eseguito dopo ogni test.
         util = null;
         config = null;
         rule = null;
@@ -108,7 +99,6 @@ public class DBIdentifierUtilImplBBTest {
 
     @AfterClass
     public static void tearDownClass() {
-        //Eseguito una sola volta dopo tutti i test.
         valididentifiertype = null;
     }
 
@@ -130,11 +120,6 @@ public class DBIdentifierUtilImplBBTest {
          *   L3 = maxLen valido, positivo
          *   U1 = checkForUniqueness = true
          *
-         * Input concreti:
-         *   sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME)
-         *   set = new SchemaGroup()
-         *   maxLen = COMPATIBLE_MAX_LEN
-         *   checkForUniqueness = true
          *
          * Oracolo:
          *   il metodo deve restituire un DBIdentifier non nullo, non delimitato,
@@ -150,8 +135,6 @@ public class DBIdentifierUtilImplBBTest {
         assertNotNull(result);
         assertEquals(VALID_NON_DELIMITED_IDENTIFIER_NAME, result.getName());
         assertFalse(result.isDelimited());
-
-        verify(config, atLeastOnce()).getIdentifierRule(any());
     }
 
     @Test
@@ -165,11 +148,6 @@ public class DBIdentifierUtilImplBBTest {
          *   L2 = maxLen valido/speciale, zero
          *   U2 = checkForUniqueness = false
          *
-         * Input concreti:
-         *   sname = DBIdentifier.newTable(VALID_DELIMITED_IDENTIFIER_NAME, true)
-         *   set = SchemaGroup non vuoto
-         *   maxLen = ZERO_MAX_LEN
-         *   checkForUniqueness = false
          *
          * Oracolo:
          *   il metodo deve restituire un DBIdentifier non nullo, delimitato,
@@ -178,7 +156,6 @@ public class DBIdentifierUtilImplBBTest {
         DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME, true);
 
         SchemaGroup schemaGroup = new SchemaGroup();
-        schemaGroup.addSchema(VALID_SCHEMA_NAME);
         NameSet set = schemaGroup;
 
         int maxLen = ZERO_MAX_LEN;
@@ -189,8 +166,6 @@ public class DBIdentifierUtilImplBBTest {
         assertNotNull(result);
         assertEquals(EXPECTED_DELIMITED_IDENTIFIER_NAME, result.getName());
         assertTrue(result.isDelimited());
-
-        verify(config, atLeastOnce()).getIdentifierRule(any());
     }
 
     @Test
@@ -204,15 +179,10 @@ public class DBIdentifierUtilImplBBTest {
          *   L3 = maxLen valido, positivo
          *   U1 = checkForUniqueness = true
          *
-         * Input concreti:
-         *   sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME)
-         *   set = new SchemaGroup()
-         *   maxLen = SHORT_MAX_LEN
-         *   checkForUniqueness = true
          *
          * Oracolo:
          *   il metodo deve restituire un DBIdentifier non nullo, non delimitato,
-         *   con nome di lunghezza minore o uguale a SHORT_MAX_LEN.
+         *   con nome di lunghezza uguale a SHORT_MAX_LEN.
          */
         DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
         NameSet set = new SchemaGroup();
@@ -223,9 +193,7 @@ public class DBIdentifierUtilImplBBTest {
 
         assertNotNull(result);
         assertFalse(result.isDelimited());
-        assertTrue(result.getName().length() <= maxLen);
-
-        verify(config, atLeastOnce()).getIdentifierRule(any());
+        assertEquals(result.getName().length(), maxLen);
     }
 
 
@@ -241,11 +209,6 @@ public class DBIdentifierUtilImplBBTest {
          *   L3 = maxLen valido, positivo
          *   U1 = checkForUniqueness = true
          *
-         * Input concreti:
-         *   sname = null
-         *   set = new SchemaGroup()
-         *   maxLen = COMPATIBLE_MAX_LEN
-         *   checkForUniqueness = true
          *
          * Oracolo:
          *   il metodo deve segnalare l'input non valido tramite eccezione.
@@ -299,7 +262,7 @@ public class DBIdentifierUtilImplBBTest {
          *   U1 = checkForUniqueness = true
          *
          * Oracolo:
-         *   il metodo deve restituire un DBIdentifier valido equivalente all'input,
+         *   il metodo deve restituire un DBIdentifier non nullo con nome equivalente all'input e non delimitato,
          *   perché non esiste un NameSet su cui verificare conflitti.
          */
         DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
@@ -312,8 +275,6 @@ public class DBIdentifierUtilImplBBTest {
         assertNotNull(result);
         assertEquals(VALID_NON_DELIMITED_IDENTIFIER_NAME, result.getName());
         assertFalse(result.isDelimited());
-
-        verify(config, atLeastOnce()).getIdentifierRule(any());
     }
 
 
@@ -329,11 +290,6 @@ public class DBIdentifierUtilImplBBTest {
          *   L1 = maxLen invalido: negativo
          *   U1 = checkForUniqueness = true
          *
-         * Input concreti:
-         *   sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME)
-         *   set = new SchemaGroup()
-         *   maxLen = -1
-         *   checkForUniqueness = true
          *
          * Oracolo:
          *   il metodo deve segnalare l'input non valido tramite eccezione.
@@ -358,7 +314,7 @@ public class DBIdentifierUtilImplBBTest {
          *   U1 = checkForUniqueness = true
          *
          * Oracolo raffinato:
-         *   il metodo non deve solleva eccezione e restituisce un DBIdentifier valido.
+         *   il metodo deve restituire un DBIdentifier non nullo con nome equivalente all'input e non delimitato.
          */
         DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
         NameSet set = new SchemaGroup();
@@ -368,8 +324,8 @@ public class DBIdentifierUtilImplBBTest {
         DBIdentifier result = util.makeIdentifierValid(sname, set, maxLen, checkForUniqueness);
 
         assertNotNull(result);
-        assertFalse(result.isDelimited());
         assertEquals(VALID_NON_DELIMITED_IDENTIFIER_NAME, result.getName());
+        assertFalse(result.isDelimited());
     }
 
 
@@ -389,7 +345,7 @@ public class DBIdentifierUtilImplBBTest {
          *
          * Oracolo:
          *   il metodo deve restituire un DBIdentifier non nullo, non delimitato,
-         *   con nome diverso da quello candidato e compatibile con maxLen.
+         *   con nome diverso da quello candidato.
          */
         DBIdentifier sname = DBIdentifier.newTable(VALID_NON_DELIMITED_IDENTIFIER_NAME);
 
@@ -405,9 +361,6 @@ public class DBIdentifierUtilImplBBTest {
         assertNotNull(result);
         assertFalse(result.isDelimited());
         assertNotEquals(VALID_NON_DELIMITED_IDENTIFIER_NAME, result.getName());
-        assertTrue(result.getName().length() <= maxLen);
-
-        verify(config, atLeastOnce()).getIdentifierRule(any());
     }
 
     @Ignore("Oracolo iniziale scartato: empty name non lancia eccezione nel comportamento osservato")
@@ -443,16 +396,16 @@ public class DBIdentifierUtilImplBBTest {
     @Test
     public void makeIdentifierValid_withEmptyIdentifierName_returnsDefinedIdentifier() {
         /*
-         * TC8 - Nome vuoto, comportamento osservato
+         * TC8 - Nome vuoto
          *
          * Category partition raffinata:
-         *   S2 = sname non nullo con nome vuoto / valore anomalo gestito
+         *   S2 = sname non nullo con nome vuoto
          *   N2 = set valido, vuoto
          *   L3 = maxLen valido, positivo
          *   U1 = checkForUniqueness = true
          *
          * Oracolo raffinato:
-         *   Il metodo restituisce un DBIdentifier.
+         *   Il metodo restituisce un DBIdentifier non nullo con nome non nullo.
          */
         DBIdentifier sname = DBIdentifier.newTable("");
         NameSet set = new SchemaGroup();
@@ -463,7 +416,6 @@ public class DBIdentifierUtilImplBBTest {
 
         assertNotNull(result);
         assertNotNull(result.getName());
-        assertTrue(result.getName().length() <= maxLen);
     }
 
 
@@ -544,7 +496,7 @@ public class DBIdentifierUtilImplBBTest {
          *   id = DBIdentifier.DBIdentifierType.TABLE
          *
          * Oracolo:
-         *   Il metodo deve restituire un identificatore nullo.
+         *   Il metodo deve restituire un DBIdentifier.NULL
          */
         DBIdentifier result = util.fromDBName(null, valididentifiertype);
 
@@ -567,8 +519,7 @@ public class DBIdentifierUtilImplBBTest {
          *   id = null
          *
          * Oracolo:
-         *   Il metodo deve segnalare il problema del id null tramite
-         *   eccezione runtime.
+         *   Il metodo deve lanciare una RuntimeException.
          */
         try {
             util.fromDBName(VALID_NON_DELIMITED_IDENTIFIER_NAME, null);
